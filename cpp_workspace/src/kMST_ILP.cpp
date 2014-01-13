@@ -153,7 +153,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 		IloNumExpr Expr3_right( this->env );
 
 		for( auto it = instance.incidentEdges[node].begin();
-				it != instance.incidentEdges.at(node).end(); ++it ) {
+				it != instance.incidentEdges[node].end(); ++it ) {
 			if( instance.edges[*it].v1 == node ) {
 				// outgoing edge
 				Expr3 -= flow[ *it ];
@@ -168,7 +168,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 				Expr3_right += flow[ *it ];
 			}
 		}
-		this->model.add( Expr3 == IloMin(1,Expr3_right) );
+		this->model.add( Expr3 == IloMin( 1, Expr3_right ) );
 
 		Expr3.end();
 		Expr3_right.end();
@@ -185,7 +185,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 
 	// 3 @todo description
 	IloNumExpr Expr5( this->env );
-	for(size_t e=n-1; e < m; ++e )
+	for(size_t e=n-1; e < this->m_edges; ++e )
 	{
 		Expr5 += x[e];
 		Expr5 += x[e+m];
@@ -263,9 +263,183 @@ void kMST_ILP::modelMCF()
 	// ++++++++++++++++++++++++++++++++++++++++++
 }
 
-void kMST_ILP::modelMTZ()
-{
-	// ++++++++++++++++++++++++++++++++++++++++++
-	// TODO build Miller-Tucker-Zemlin model
-	// ++++++++++++++++++++++++++++++++++++++++++
+void kMST_ILP::modelMTZ() {
+	std::ostringstream varName;
+	
+	// 42 Initialization of x (array of used edges in the solution)
+	IloBoolVarArray x(env, 2 * this->m_edges);
+	for (size_t edge = 0; edge < 2 * this->m_edges; ++edge) {
+		varName.str(""); varName.clear();
+		varName << "x_" << edge;
+		x[edge] = IloBoolVar(this->env, varName.str().c_str() );
+	}
+
+	// Initialization of u (array of used nodes in the solution)
+	IloIntVarArray u(env, n);
+	for (size_t node = 0; node < this->n; ++node) {
+		varName.str(""); varName.clear();
+		varName << "u_" << node;
+		u[ node ] = IloIntVar(this->env, 0, k, varName.str().c_str());
+	}
+
+	// 43 Initialization of y (support array to include only k nodes)
+	IloBoolVarArray y(env, this->n);
+	for (size_t node = 0; node < this->n; ++node) {
+		varName.str(""); varName.clear();
+		varName << "y_" << node;
+		y[node] = IloBoolVar(env, varName.str().c_str() );
+	}
+
+	// 29 objective function
+	IloExpr expr( this->env );
+	for (size_t edge = this->n - 1; edge < this->m_edges; ++edge) {
+		expr += instance.edges[edge].weight * x[edge];
+		expr += instance.edges[edge].weight * x[edge + m];
+	}
+	model.add(IloMinimize(env, expr));
+	expr.end();
+
+	// 31 u[v] has to be between 0 and k
+	for (size_t v = 1; v < n; ++v) {
+		IloNumExpr Expr2( this->env );
+		Expr2 += u[v];
+		model.add(Expr2 <= k);
+		Expr2.end();
+	}
+
+	// 32 u[0] must be 0
+	IloNumExpr Expr5( this->env );
+	Expr5 += u[0];
+	model.add(Expr5 == 0);
+	Expr5.end();
+
+	// 33 exactly 1 outgoing edge from the root
+	IloNumExpr Expr4( this->env );
+	for (size_t e = 0; e < n - 1; ++e) {
+		Expr4 += x[e];
+	}
+	model.add(Expr4 == 1);
+	Expr4.end();
+
+	// 34 k-1 edges are allowed in the solution
+	IloNumExpr Expr6( this->env );
+	for (size_t e = n - 1; e < this->m_edges; ++e) {
+		Expr6 += x[e];
+		Expr6 += x[e + m];
+	}
+	model.add(Expr6 == k - 1);
+	Expr6.end();
+
+	// 35 sum of the u value
+	IloNumExpr Expr7( this->env );
+	for (size_t v = 0; v < n; ++v) {
+		Expr7 += u[v];
+	}
+	model.add(Expr7 == (k * (k + 1)) / 2);
+	Expr7.end();
+
+	// 36 force y to be 1 if u is in the solution
+	for (size_t v = 0; v < n; ++v) {
+		IloNumExpr Expr33( this->env );
+		Expr33 += u[v];
+		model.add(Expr33 <= k * y[v]);
+		Expr33.end();
+	}
+
+	// 37 only k different nodes allowed
+	IloNumExpr Expr34( this->env );
+	for (size_t v = 0; v < n; ++v) {
+		Expr34 += y[v];
+	}
+	model.add(Expr34 == k);
+	Expr34.end();
+
+	// (39) (40) // if f_ij in the solution -> u[i] and u[j] must be greater than 0
+	for (size_t v = 1; v < n; ++v) {
+		for ( auto it = instance.incidentEdges[v].begin();
+				it != instance.incidentEdges[v].end(); ++it) {
+			if (instance.edges.at(*it).v1 == 0) {
+				IloNumExpr Expr6( this->env );
+				IloNumExpr Expr7( this->env );
+				Expr6 += x[(*it)];
+				Expr7 += x[(*it) + m];
+				model.add(Expr6 <= u[instance.edges.at(*it).v2]);
+				model.add(Expr7 <= u[instance.edges.at(*it).v2]);
+				Expr6.end();
+				Expr7.end();
+			} else {
+				IloNumExpr Expr6( this->env );
+				IloNumExpr Expr7( this->env );
+				Expr6 += x[(*it)];
+				Expr7 += x[(*it)];
+				model.add(Expr6 <= u[instance.edges.at(*it).v1]);
+				model.add(Expr7 <= u[instance.edges.at(*it).v2]);
+				Expr6.end();
+				Expr7.end();
+
+				IloNumExpr Expr40( this->env );
+				IloNumExpr Expr41( this->env );
+				Expr40 += x[(*it) + m];
+				Expr41 += x[(*it) + m];
+				model.add(Expr40 <= u[instance.edges.at(*it).v1]);
+				model.add(Expr41 <= u[instance.edges.at(*it).v2]);
+				Expr40.end();
+				Expr41.end();
+			}
+		}
+	}
+
+	// 30 miller tucker zemlin formulation
+	for (size_t edge = 0; edge < this->m_edges; ++edge) {
+		IloNumExpr Expr4( this->env );
+		Expr4 += u[instance.edges[edge].v1];
+		Expr4 += x[edge];
+
+		model.add(Expr4 <= u[instance.edges[edge].v2] + k * (1 - x[edge]));
+		Expr4.end();
+
+		IloNumExpr Expr12( this->env );
+		Expr12 += u[instance.edges[edge].v2];
+		Expr12 += x[(edge) + m];
+
+		model.add(Expr12 <= u[instance.edges[edge].v1] + k * (1 - x[(edge) + m]));
+		Expr12.end();
+	}
+
+	// 41
+	for (size_t edge = n - 1; edge < this->m_edges; ++edge) {
+		IloNumExpr Expr50( this->env );
+		Expr50 += y[ instance.edges[edge].v1 ];
+		Expr50 += x[edge];
+		Expr50 += x[edge + m];
+
+		model.add(Expr50 <= y[ instance.edges[edge].v2 ] + 1);
+		Expr50.end();
+
+		IloNumExpr Expr51( this->env );
+		Expr51 += y[ instance.edges[edge].v2 ];
+		Expr51 += x[ edge ];
+		Expr51 += x[ edge + m ];
+
+		model.add(Expr51 <= y[ instance.edges[edge].v1 ] + 1);
+		Expr51.end();
+	}
+
+	// 38 every node \ 0 must have an incoming flow of <= 1
+	for (size_t node = 1; node < n; ++node) {
+		IloNumExpr Expr11( this->env );
+
+		for ( auto it = instance.incidentEdges[node].begin();
+				it != instance.incidentEdges[node].end(); ++it) {
+			if (instance.edges[*it].v2 == node) {
+				// incoming edge
+				Expr11 += x[ *it ];
+			} else {
+				// outgoing edge
+				Expr11 += x[ (*it) + m ];
+			}
+		}
+		model.add( Expr11 <= 1 );
+		Expr11.end();
+	}
 }

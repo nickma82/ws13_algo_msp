@@ -51,7 +51,11 @@ private:
 	 * Builds single commodity flow model
 	 */
 	void modelSCF(bool makeFasterResults = false);
+
 	void modelMCF();
+	/**
+	 * Miller-Tucker-Zemlin model
+	 */
 	void modelMTZ();
 
 public:
