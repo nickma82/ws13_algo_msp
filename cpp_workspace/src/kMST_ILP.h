@@ -6,10 +6,29 @@
 #include <ilcplex/ilocplex.h>
 #include <fstream>
 #include <stdint.h>
-
-using namespace std;
+#include <sstream>      // std::ostringstream
 
 ILOSTLBEGIN
+
+class kMST_Solution {
+public:
+	kMST_Solution(std::string _testInstance, const int _k);
+
+	/**
+	 * get the solution as ostringstream
+	 */
+	std::string getResultStream();
+
+	// inputs
+	std::string testInstance;
+	int k;
+
+	// results
+	std::string cplexStatus;
+	double cpuTime;
+	double objectValue;
+	unsigned int branchAndBoundNodes;
+};
 
 class kMST_ILP {
 private:
@@ -25,12 +44,13 @@ private:
 	IloModel model;
 	IloCplex cplex;
 
+	//Local vars
 	std::fstream outputFile;
 
 	/**
 	 * Builds single commodity flow model
 	 */
-	void modelSCF();
+	void modelSCF(bool makeFasterResults = false);
 	void modelMCF();
 	void modelMTZ();
 

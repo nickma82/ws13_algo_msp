@@ -10,8 +10,7 @@
 
 using namespace std;
 
-class Instance
-{
+class Instance {
 
 public:
 
@@ -28,10 +27,12 @@ public:
 	// incident edges denoted by index in vector <edges>
 	vector<list<unsigned int> > incidentEdges;
 
+	// instance name
+	std::string name;
+
 	// constructor
 	Instance( string file );
 
 };
-// Instance
 
 #endif //__INSTANCE__H__

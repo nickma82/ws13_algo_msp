@@ -1,12 +1,27 @@
 #include "kMST_ILP.h"
-#include <sstream>      // std::ostringstream
+
+kMST_Solution::kMST_Solution(std::string _testInstance, const int _k) :
+	testInstance( _testInstance ), k( _k ) {
+}
+
+std::string kMST_Solution::getResultStream() {
+	std::ostringstream outt;
+
+	outt << "CPLEX status: " << this->cplexStatus << std::endl;
+	outt << "Branch-and-Bound nodes: " << this->branchAndBoundNodes << std::endl;
+	outt << "Objective value: " << this->objectValue << std::endl;
+	outt << "CPU time: " << this->cpuTime << std::endl;
+
+	return outt.str();
+}
 
 kMST_ILP::kMST_ILP( Instance& _instance, string _model_type, int _k ) :
 	instance( _instance ), model_type( _model_type ), k( _k )
 {
 	this->n = instance.n_nodes;
 	this->m_edges = m = instance.n_edges;
-	if( k == 0 ) k = n;
+	if( k == 0 )
+		k = n;
 
 	this->outputFile.open("cplex_output", ios::out);
 }
@@ -48,12 +63,19 @@ void kMST_ILP::solve()
 		std::cout << "Calling CPLEX solve ...\n";
 		cplex.solve();
 		std::cout << "CPLEX finished." << std::endl;
-		std::cout << "CPLEX status: " << cplex.getStatus() << std::endl;
-		std::cout << "Branch-and-Bound nodes: " << cplex.getNnodes() << std::endl;
-		std::cout << "Objective value: " << cplex.getObjValue() << std::endl;
-		std::cout << "CPU time: " << Tools::CPUtime() << std::endl;
 
-		this->outputFile << "test1234" << std::endl;
+		/* Form the solution */
+		std::ostringstream tmpStatus;
+		tmpStatus << cplex.getStatus();
+
+		kMST_Solution solution(this->instance.name, this->k);
+		solution.cplexStatus = tmpStatus.str();
+		solution.branchAndBoundNodes = cplex.getNnodes();
+		solution.objectValue = cplex.getObjValue();
+		solution.cpuTime = Tools::CPUtime();
+
+		std::cout << solution.getResultStream();
+		this->outputFile << solution.getResultStream();
 	}
 	catch( IloException& e ) {
 		std::cerr << "kMST_ILP: exception " << e << std::endl;
@@ -73,12 +95,12 @@ void kMST_ILP::setCPLEXParameters()
 	cplex.setParam( IloCplex::MIPInterval, 1 );
 	cplex.setParam( IloCplex::MIPDisplay, 2 );
 	// only use a single thread
-	cplex.setParam( IloCplex::Threads, 1 );
+	cplex.setParam( IloCplex::Threads, 4 );
 }
 
-void kMST_ILP::modelSCF() {
+void kMST_ILP::modelSCF(bool makeFasterResults) {
 	/* Initialize the used edges */
-	IloBoolVarArray x(this->env, this->m_edges * 2);
+	IloBoolVarArray x( this->env, this->m_edges * 2 );
 	std::ostringstream varName;
 
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
@@ -87,7 +109,7 @@ void kMST_ILP::modelSCF() {
 		x[edgeNum] = IloBoolVar( this->env, varName.str().c_str() );
 	}
 
-	/* 1 Create the objective function */
+	// 1 Create the objective function
 	IloExpr expression( this->env );
 	for( size_t edgeNum = this->n-1; edgeNum < this->m_edges; ++edgeNum) {
 		int edgeWeight = this->instance.edges[edgeNum].weight;
@@ -98,7 +120,7 @@ void kMST_ILP::modelSCF() {
 	this->model.add( IloMinimize(this->env, expression) );
 	expression.end();
 
-	/* 11 Initialization of flow variable */
+	// 11 Initialization of flow variable
 	IloIntVarArray flow( this->env, this->m_edges * 2 );
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
 		varName.str(""); varName.clear();
@@ -106,61 +128,9 @@ void kMST_ILP::modelSCF() {
 		flow[edgeNum] = IloIntVar( this->env, 0, this->k, varName.str().c_str() );
 	}
 
-	/* 13 Initialization of y which is the support array
-	 * for a k+1 node inclusion */
-	IloBoolVarArray y( this->env, this->m_edges * 2 );
-	for( size_t nodeNum = 0; nodeNum < this->m_edges *2; ++nodeNum ) {
-		varName.str(""); varName.clear();
-		varName << "y_" <<  nodeNum;
-		y[nodeNum] = IloBoolVar( this->env, varName.str().c_str() );
-	}
-
-	// 7,8 if an edge x_ij is selected -> y_i and y_j must be 1
-	for( size_t edgeNum = 0; edgeNum < this->m_edges * 2; ++edgeNum)
-	{
-		IloNumExpr Expr40( this->env ), Expr41( this->env );
-		Expr40 += x[edgeNum];
-		model.add( Expr40 <= y[instance.edges[ edgeNum % this->m_edges ].v1] );
-		Expr40.end();
-
-		Expr41 += x[edgeNum];
-		model.add( Expr41 <= y[instance.edges[ edgeNum % this->m_edges ].v2] );
-		Expr41.end();
-	}
-
-	// 10 exactly k+1 different nodes allowed (with artificial node)
-	IloNumExpr Expr34( this->env );
-	for(size_t v = 0; v < n; ++v )
-	{
-		Expr34 += y[v];
-	}
-	model.add(Expr34 == k+1);
-	Expr34.end();
-
-	// 9 @todo description //
-	for(size_t edge = 0; edge < this->m_edges; ++edge )
-	{
-		IloNumExpr Expr50( this->env );
-		Expr50 += y[instance.edges[edge].v1];
-		Expr50 += x[edge];
-		Expr50 += x[edge + this->m_edges];
-
-		model.add(Expr50 <= y[instance.edges[edge].v2] + 1);
-		Expr50.end();
-
-		IloNumExpr Expr51( this->env );
-		Expr51 += y[ instance.edges[edge].v2 ];
-		Expr51 += x[ edge ];
-		Expr51 += x[ edge + this->m_edges ];
-
-		model.add(Expr51 <= y[instance.edges[edge].v1] + 1);
-		Expr51.end();
-	}
-
-
-	// (2) // Flow expression from node 0 (flow k outgoing)
+	// 2 Flow expression from node 0 (flow k outgoing)
 	IloNumExpr Expr2( this->env );
-	for( auto it=instance.incidentEdges[0].begin();
+	for( auto it = instance.incidentEdges[0].begin();
 			it != instance.incidentEdges.at(0).end(); ++it ) {
 		if(instance.edges.at(*it).v1 == 0)
 		{	// outgoing edge
@@ -174,85 +144,118 @@ void kMST_ILP::modelSCF() {
 		}
 
 	}
-	model.add(Expr2 == k);
+	this->model.add(Expr2 == k);
 	Expr2.end();
 
 
-	// (4) // check flow
+	// 4 check flow
 	for(size_t v = 1; v < this->n; ++v )
 	{
 		IloNumExpr Expr3( this->env );
 		IloNumExpr Expr3_right( this->env );
 
 		for( auto it = instance.incidentEdges[v].begin();
-				it != instance.incidentEdges.at(v).end(); ++it )
-		{
-			if(instance.edges.at(*it).v1 == v)
-			{	// outgoing edge
+				it != instance.incidentEdges.at(v).end(); ++it ) {
+			if(instance.edges.at(*it).v1 == v) {
+				// outgoing edge
 				Expr3 -= flow[*it];
 				Expr3 += flow[(*it)+m];
 
 				Expr3_right += flow[(*it)+m];
-			}
-			else
-			{	// incoming edge
+			} else {
+				// incoming edge
 				Expr3 += flow[*it];
 				Expr3 -= flow[(*it)+m];
 
 				Expr3_right += flow[*it];
 			}
 		}
-		model.add(Expr3 == IloMin(1,Expr3_right));
+		this->model.add(Expr3 == IloMin(1,Expr3_right));
 
 		Expr3.end();
 		Expr3_right.end();
 	}
 
-	// (5) // force x[e] to be set if flow exist
+	// 5 force x[e] to be set if flow exist
 	for(size_t e=0; e < this->m_edges * 2; ++e )
 	{
 		IloNumExpr Expr4( this->env );
 		Expr4 += flow[e];
-		model.add(Expr4 <= (k * x[e]));
+		this->model.add(Expr4 <= (k * x[e]));
 		Expr4.end();
 	}
 
-	// (3) //
+	// 3 @todo description
 	IloNumExpr Expr5( this->env );
 	for(size_t e=n-1; e < m; ++e )
 	{
 		Expr5 += x[e];
 		Expr5 += x[e+m];
 	}
-	model.add(Expr5 == k-1);
+	this->model.add(Expr5 == k-1);
 	Expr5.end();
 
-	// (6) // force the flow from node 0 to flow over exactly one edge
+	// 6  force the flow from node 0 to flow over exactly one edge
 	IloNumExpr Expr6( this->env );
 	for(size_t e=0; e < n-1; ++e )
 	{
 		Expr6 += x[e];
 	}
-	model.add(Expr6 == 1);
+	this->model.add(Expr6 == 1);
 	Expr6.end();
 
-	// build model
-	cplex = IloCplex( model );
-	// export model to a text file
-	//cplex.exportModel( "model.lp" );
-	// set parameters
-	setCPLEXParameters();
+	if ( makeFasterResults ) {
+		// 13 Initialization of y which is the support array
+		// for a k+1 node inclusion
+		IloBoolVarArray y( this->env, this->m_edges * 2 );
+		for( size_t nodeNum = 0; nodeNum < this->m_edges *2; ++nodeNum ) {
+			varName.str(""); varName.clear();
+			varName << "y_" <<  nodeNum;
+			y[nodeNum] = IloBoolVar( this->env, varName.str().c_str() );
+		}
 
-	// solve model
-	std::cout << "Calling CPLEX solve ..." << std::endl;
-	cplex.solve();
-	std::cout << "CPLEX finished." << std::endl;
-	std::cout << "CPLEX status: " << cplex.getStatus() << std::endl;
-	std::cout << "Branch-and-Bound nodes: " << cplex.getNnodes() << std::endl;
-	std::cout << "Objective value: " << cplex.getObjValue() << std::endl;
-	std::cout << "CPU time: " << Tools::CPUtime() << std::endl;
-	std::cout << "Epsilon: " << cplex.getParam(IloCplex::EpInt) << std::endl;
+		 // 7,8 if an edge x_ij is selected -> y_i and y_j must be 1
+		for( size_t edgeNum = 0; edgeNum < this->m_edges * 2; ++edgeNum)
+		{
+			IloNumExpr Expr40( this->env ), Expr41( this->env );
+			Expr40 += x[edgeNum];
+			this->model.add( Expr40 <= y[instance.edges[ edgeNum % this->m_edges ].v1] );
+			Expr40.end();
 
+			Expr41 += x[edgeNum];
+			this->model.add( Expr41 <= y[instance.edges[ edgeNum % this->m_edges ].v2] );
+			Expr41.end();
+		}
+
+		// 10 exactly k+1 different nodes allowed (with artificial node)
+		IloNumExpr Expr34( this->env );
+		for(size_t v = 0; v < n; ++v )
+		{
+			Expr34 += y[v];
+		}
+		this->model.add(Expr34 == k+1);
+		Expr34.end();
+
+		// 9 @todo description //
+		for(size_t edge = 0; edge < this->m_edges; ++edge )
+		{
+			IloNumExpr Expr50( this->env );
+			Expr50 += y[ instance.edges[edge].v1 ];
+			Expr50 += x[ edge ];
+			Expr50 += x[ edge + this->m_edges ];
+
+			this->model.add( Expr50 <= y[ instance.edges[edge].v2 ] + 1);
+			Expr50.end();
+
+			IloNumExpr Expr51( this->env );
+			Expr51 += y[ instance.edges[edge].v2 ];
+			Expr51 += x[ edge ];
+			Expr51 += x[ edge + this->m_edges ];
+
+			this->model.add( Expr51 <= y[ instance.edges[edge].v1 ] + 1);
+			Expr51.end();
+		}
+	} //end makeFasterResults
 }
 
 void kMST_ILP::modelMCF()
