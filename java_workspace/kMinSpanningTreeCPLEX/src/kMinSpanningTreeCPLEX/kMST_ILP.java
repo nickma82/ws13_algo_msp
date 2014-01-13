@@ -79,23 +79,92 @@ public class kMST_ILP {
 	}
 
 	private void modelSCF() throws IloException {
-		// edge variables
+		// (1) edge variables
 		IloIntVar[] x = cplex.boolVarArray(2 * m);
-		
-		// objective function
+
+		// (2) objective function
 		IloLinearIntExpr obj = cplex.linearIntExpr();
-		for(int e = 0; e < m; e++) {
+		for (int e = 0; e < m; e++) {
 			int weight = this.instance.getEdge(e).getWeight();
 			obj.addTerm(x[e], weight);
 			obj.addTerm(x[e + m], weight);
 		}
 		cplex.addMinimize(obj);
-		
-		
+
+		// (3) flow variable
+		String[] names = new String[2 * m];
+		for (int i = 0; i < 2 * m; i++) {
+			names[i] = "f_" + i;
+		}
+		IloIntVar[] f = cplex.intVarArray(2 * m, 0, k, names);
+
+		// (4) flow from 0 to j is k
+		IloLinearNumExpr constr1 = cplex.linearNumExpr();
+		for (int e : instance.getIncidentEdges(0)) {
+			if (instance.getEdge(e).getV1() == 0) {
+				constr1.addTerm(1, f[e]);
+				constr1.addTerm(-1, f[e + m]);
+			} else {
+				constr1.addTerm(-1, f[e]);
+				constr1.addTerm(1, f[e + m]);
+			}
+		}
+		cplex.addEq(k, constr1);
+
+		// (5) flow from j to 0 is 0
+//		IloLinearNumExpr constr2 = cplex.linearNumExpr();
+//		for (int e : instance.getIncidentEdges(0)) {
+//			if (instance.getEdge(e).getV2() == 0) {
+//				constr2.addTerm(1, f[e]);
+//			}
+//		}
+//		cplex.addEq(0, constr2);
+
+		// (6) k - 1 selected edges
+		IloLinearNumExpr constr2_5 = cplex.linearNumExpr();
+		for(int e = 0; e < m; e++) {
+			if(instance.getEdge(e).getV1() != 0 || instance.getEdge(e).getV2() != 0) {
+				constr2_5.addTerm(1, x[e]);
+				constr2_5.addTerm(1, x[e + m]);
+			}
+		}
+		cplex.addEq(k - 1, constr2_5);
+
+		// (7) v != 0
+		for (int v = 1; v < n; v++) {
+			IloLinearNumExpr constr3 = cplex.linearNumExpr();
+			IloLinearNumExpr constr4 = cplex.linearNumExpr();
+			for (int e : instance.getIncidentEdges(v)) {
+				if (instance.getEdge(e).getV1() == v) {
+					constr3.addTerm(-1, f[e]);
+					constr3.addTerm(1, f[e + m]);
+					constr4.addTerm(1, f[e + m]);
+				} else {
+					constr3.addTerm(1, f[e]);
+					constr3.addTerm(-1, f[e + m]);
+					constr4.addTerm(1, f[e]);
+				}
+			}
+			cplex.addEq(constr3, cplex.min(1, constr4));
+		}
+
+		// (8)
+		for (int e = 0; e < 2 * m; e++) {
+			cplex.addLe(f[e], cplex.prod(k, x[e]));
+		}
+
+		// (9)
+		IloLinearNumExpr constr5 = cplex.linearNumExpr();
+		for (int e : instance.getIncidentEdges(0)) {
+			if (instance.getEdge(e).getV1() == 0) {
+				constr5.addTerm(1, x[e]);
+			}
+		}
+		cplex.addEq(1, constr5);
 	}
 
 	private void modelMCF() throws IloException {
-		
+
 	}
 
 	private void modelMTZ() throws IloException {
