@@ -1,0 +1,12 @@
+obj/Global.o: src/Global.cpp src/Global.h
+obj/Instance.o: src/Instance.cpp src/Instance.h src/Tools.h src/Global.h \
+  src/EdgeIO.h
+obj/kMST_BC.o: src/kMST_BC.cpp src/kMST_BC.h src/Tools.h src/Global.h \
+  src/Instance.h src/kMST_BC_CutCallback.h
+obj/kMST_BC_CutCallback.o: src/kMST_BC_CutCallback.cpp \
+  src/kMST_BC_CutCallback.h src/Instance.h src/Tools.h src/Global.h \
+  src/dheamaxflow.h
+obj/Tools.o: src/Tools.cpp src/Tools.h src/Global.h
+obj/dheamaxflow.o: src/dheamaxflow.cpp src/dheamaxflow.h
+obj/Main.o: src/Main.cpp src/EdgeIO.h src/Tools.h src/Global.h src/Instance.h \
+  src/kMST_BC.h src/kMST_BC_CutCallback.h src/dheamaxflow.h

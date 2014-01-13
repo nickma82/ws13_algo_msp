@@ -1,0 +1,159 @@
+\documentclass[a4paper,10pt]{article}
+
+ \usepackage{amsfonts}
+
+%opening
+\title{Fortgeschrittene Algorithmen und Datenstrukturen \\ \bigskip \textbf{Programmier\"{u}bung}}
+\author{Johannes Reiter, Christian Gruber}
+\date{\vspace{1cm} 26.Juni 2009}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem description}
+Gegeben ist ein ungerichteter Graph $G=(V,E,w)$ mit einer nicht negativen
+Gewichtungsfunktion $w(e) \in \mathbb{R}$. Das Ziel ist es in diesem Graphen einen
+k-node minimum spanning tree (k-MST) zu finden. Solch ein k-MST ist der
+kleinste MST mit genau $k$ verbunden Knoten in diesem Graphen. \\
+Gesucht ist nun eine Single Commodity Flow und eine Cycle Elimination
+Formulierung um diese Aufgabenstellung moeglichst gut zu lösen. Die
+ausgearbeiteten ILPs werden im Anschluss praesentiert und jeweils auf die
+verschiedenen Testinstanzen angewendet.
+
+\section{Single Commodity Flow Formulation}
+
+Das Prinzip des Single Commodity Flows (SCF) beruht auf die Ausbreitung eines Fluss
+in dem gegebenen Graphen. Ausgehend von einem artifical root node verbreitet sich
+dieser Fluss. \\
+Wir haben nun ein Minimierungsproblem, wobei $x_e$ eine Entscheidungsvariable ist,
+die festlegt, ob die Kante $e$ in der Loesung enthalten ist oder nicht.
+
+\begin{equation}
+min \sum_{e \in E \setminus \delta^{+}(0)} w_e * x_e 
+\end{equation}
+
+Die Variable $f_e$ beschreibt nun  den Fluss auf der Kante $e$. Mit der Formel (2)
+stellen wir sicher, dass genau $k$ Knoten angeschlossen werden.
+\begin{equation}
+s.t.  \sum_{e \in \delta^{+}(0)} f_e - \sum_{e \in \delta^{-}(0)} f_e + \sum_{e \in \delta^{-}(0)} f_{e+|E|} - \sum_{e \in \delta^{+}(0)} f_{e+|E|} = k
+\end{equation}
+Die folgende Formel (3) besagt, dass falls in dem Knoten $v$ ein Fluss $f_e$ eingeht, 
+auch ein Fluss verringert um den Wert 1 ausgehen muss. Wird ein Knoten in dieser Loesung
+des k-MSTs nicht angeschlossen, hat dieser keinen eingehenden Fluss und darf somit auch
+keinen ausgehenden haben.
+\begin{eqnarray}
+\sum_{e \in \delta^{-}(v)} f_e - \sum_{e \in \delta^{+}(v)} f_e + \sum_{e \in \delta^{+}(v)} f_{e+|E|} - \sum_{e \in \delta^{-}(v)} f_{e+|E|} = \nonumber \\ min(1,\sum_{e \in \delta^{-}(v)}f_e + \sum_{e \in \delta^{+}(v)} f_{e+|E|}) \qquad  \forall v \not = 0, v \ \in V 
+\end{eqnarray}
+Es wird sichergestellt, dass falls ein Fluss $f_e$ auf einer Kante $e$ auftritt, diese
+Kante $e$ auch durch $x_e$ ausgewaehlt werden muss. 
+\begin{equation}
+f_e \leq k * x_e \qquad \forall e \in E 
+\end{equation}
+Ein k-MST mit $k$ Knoten hat genau $k-1$ ausgewaehlte Kanten.
+\begin{equation}
+\sum_{e \in E\setminus \delta^{+}(0)} x_e = k-1 
+\end{equation}
+Mit der Formel (6) wird sichergestellt, dass der k-MST auch ohne dem
+artificial root node ein zusammenhaengender Graph ist.
+\begin{equation}
+\sum_{e \in \delta^{+}(0)} x_e = 1 
+\end{equation}
+\begin{equation}
+0 \leq f_e \leq k \qquad \forall e \in E
+\end{equation}
+\begin{equation}
+0 \leq f_{e+|E|} \leq k \qquad \forall e \in E
+\end{equation}
+\begin{equation}
+x_e \in (0,1) \qquad \forall e \in E
+\end{equation}
+
+\subsection*{Results}
+
+
+\begin{tabular}{cccccc}
+\hline
+test & k & objective & running  & branch-and-bound & optimum    \\
+instance & & function value & time & nodes & node  \\
+\hline
+fad-01.dat & 6 & 629 & 0.02s &  &   \\
+ & 3 & 113 & 0.04s &  &   \\
+fad-02.dat & 11 & 1575 & 0.88s & 500 & 406  \\
+ & 6 & 716 & 0.44s & 300 & 285 \\
+fad-03.dat & 26 & &  & &   \\
+ & 11 & 903 & 63.56s & 12300 & 7124  \\
+fad-04.dat & 36 & &  &  &   \\
+ & 15 & 972 & 6330s & 530900 &  \\
+fad-05.dat & 51 & &  & &  \\
+ & 21 & &  &  &   \\
+fad-06.dat & 101 & &  &  &   \\
+ & 41 & &  &  &   \\
+\hline
+\end{tabular}
+
+\bigskip
+
+\section{Cycle Elimination Formulation}
+
+Der Vorteil der Cycle Elimination Formulierung ist, dass wir nicht exponentiell viele
+Ungleichungen benoetigen. Diese werden quasi on-demand, also falls ein Zyklus gefunden wird,
+ueber eine Callbackfunktion hinzugefuegt, die in jedem Branch-Node aufgerufen wird.
+Um Zyklen zu finden werden bei jeder Kante $e={u,v}$ einmal die Kosten auf unendlich 
+gesetzt und dann versucht den kuerzesten Pfad zwischen den Knoten $u$ und $v$ zu finden. 
+Wenn jetzt $\sum_{e \in \delta(C)} (1 - x_e) < 1$ (wobei C der gefundene Pfad plus die Kante $e$ ist), 
+dann wird ein Cut generiert und die Nebenbedingung (12) hinzugefuegt.
+Dieses Verfahren wird fuer alle markierten Kanten in der Loesung wiederholt. \\
+
+\begin{equation}
+ min \sum_{e \in E} w_e * x_e
+\end{equation}
+
+\begin{equation}
+ s.t. \sum_{e \in E} x_e = k - 1
+\end{equation}
+\begin{equation}
+ \sum_{e \in \delta(C)} (1 - x_e) \geq 1
+\end{equation}
+Mit der folgenden Gleichung wird ueber $z_V$ sichergestellt, dass 
+genau $k$ Knoten ausgewaehlt werden muessen.
+\begin{equation}
+ \sum_{v \in V} z_v = k
+\end{equation}
+Falls eine Kante $e$ ausgewaehlt wurde, muss auch der jeweilige Anfangs- bzw. Endknoten
+durch die Entscheidungsvariable $z_v$ markiert sein.
+\begin{eqnarray}
+ x_{(u,v)} \leq z_u \qquad \forall (u,v) \in E \nonumber \\
+ x_{(u,v)} \leq z_v \qquad \forall (u,v) \in E
+\end{eqnarray}
+
+\begin{equation}
+ x_e \in \{0,1\} \qquad \forall e \in E
+\end{equation}
+\begin{equation}
+ z_v \in \{0,1\} \qquad \forall v \in V
+\end{equation}
+
+\subsection*{Results}
+
+\begin{tabular}{ccccccc}
+\hline
+test & k & objective & running  & branch-and-bound & optimum & separated   \\
+instance & & function value & time & nodes & node & cuts \\
+\hline
+fad-01.dat & 6 & 629 & 0.02s & & &  \\
+ & 3 & 113 & 0.03s &  & &  \\
+fad-02.dat & 11 & 1575 & 0.06s &  & & 14  \\
+ & 6 & 716 & 0.1s & 2 & 2 &  \\
+fad-03.dat & 26 & 3182 & 1.85s & 34 & 34 & 30 \\
+ & 11 & 903 & 0.09s & & & 15 \\
+fad-04.dat & 36 & 3469 & 0.84s & 3 & 3 & 23 \\
+ & 15 & 972 & 0.43s & & & 44 \\
+fad-05.dat & 51 & 5000 & 26.84s & 100 & 97 & 37 \\
+ & 21 & 1322 & 0.42s &  & & 2 \\
+fad-06.dat & 101 & 6790 & 628s & 505 & 505 & 109 \\
+ & 41 & 1997 & 3.31s & & & 8 \\
+\hline
+\end{tabular}
+
+\end{document}

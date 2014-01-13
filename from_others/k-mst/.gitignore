@@ -1,0 +1,14 @@
+source/workspace/.metadata/**/*
+*.o
+*.a
+*.out
+source/workspace/k-mst/kmst
+source/framework/kmst  
+source/workspace/.metadata/*
+*.aux
+*.tex.backup
+*.log
+*.tex~
+*.*~
+*.pdf
+*.txt

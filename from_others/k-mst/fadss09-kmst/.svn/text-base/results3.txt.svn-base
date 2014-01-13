@@ -1,0 +1,83 @@
+Tried aggregator 2 times.
+MIP Presolve eliminated 125 rows and 40 columns.
+MIP Presolve modified 27 coefficients.
+Aggregator did 136 substitutions.
+Reduced MIP has 597 rows, 585 columns, and 1926 nonzeros.
+Probing fixed 1 vars, tightened 150 bounds.
+Probing time =    0.00 sec.
+Tried aggregator 1 time.
+MIP Presolve eliminated 16 rows and 23 columns.
+MIP Presolve modified 176 coefficients.
+Aggregator did 45 substitutions.
+Reduced MIP has 536 rows, 517 columns, and 1794 nonzeros.
+Presolve time =    0.02 sec.
+Clique table members: 1.
+MIP emphasis: balance optimality and feasibility.
+MIP search method: dynamic search.
+Parallel mode: none, using 1 thread.
+Root relaxation solution time =    0.00 sec.
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer     Best Node    ItCnt     Gap
+
+      0     0      407.1818    16                    407.1818       83         
+*     0+    0                         2741.4000      407.1818       83   85.15%
+      0     0      619.1994    24     2741.4000      Cuts: 55      221   77.41%
+      0     0      694.0204    21     2741.4000      Cuts: 19      266   74.68%
+*     0+    0                         1214.7000      694.0204      266   42.86%
+      0     0      738.5250    21     1214.7000       Cuts: 9      281   39.20%
+      0     0      741.6317    18     1214.7000       Cuts: 5      287   38.95%
+      0     0      770.0279    20     1214.7000   Flowcuts: 1      294   36.61%
+      0     0      771.4426    20     1214.7000   Impl Bds: 1      295   36.49%
+      0     2      801.0168    20     1214.7000      771.4426      295   36.49%
+*    18    12      integral     0     1171.6000      830.4354      635   29.12%
+*    65    15      integral     0     1115.8000     1026.1542     1458    8.03%
+*    74    15      integral     0     1092.4000     1032.2249     1585    5.51%
+*    78     4      integral     0     1054.0000     1035.4196     1604    1.76%
+
+Implied bound cuts applied:  35
+Flow cuts applied:  17
+Gomory fractional cuts applied:  9
+param size: 1e-05obj. value: 1054
+Values x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+1, 0.6, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+0.2, 1, 1, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
+1, 0, 0, 0, 0, 0.2, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 1.11022e-16, 1, 0, 0, 0, 1, 0,
+0, 0, 0, 0, 0, 0]
+Values f = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+7, 3, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+2, 1, 2, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
+1, 0, 0, 0, 0, 2, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 1.11022e-16, 1, 0, 0, 0, 1, 0,
+0, 0, 0, 0, 0, 0]
+Values y = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0]

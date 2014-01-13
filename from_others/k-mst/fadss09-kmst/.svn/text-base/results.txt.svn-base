@@ -1,0 +1,42 @@
+Tried aggregator 3 times.
+MIP Presolve eliminated 26 rows and 12 columns.
+MIP Presolve modified 6 coefficients.
+Aggregator did 27 substitutions.
+Reduced MIP has 111 rows, 106 columns, and 342 nonzeros.
+Probing fixed 0 vars, tightened 24 bounds.
+Probing time =    0.00 sec.
+Tried aggregator 1 time.
+MIP Presolve eliminated 1 rows and 1 columns.
+MIP Presolve modified 42 coefficients.
+Aggregator did 9 substitutions.
+Reduced MIP has 101 rows, 96 columns, and 317 nonzeros.
+Presolve time =    0.00 sec.
+Clique table members: 1.
+MIP emphasis: balance optimality and feasibility.
+MIP search method: dynamic search.
+Parallel mode: none, using 1 thread.
+Root relaxation solution time =    0.00 sec.
+
+        Nodes                                         Cuts/
+   Node  Left     Objective  IInf  Best Integer     Best Node    ItCnt     Gap
+
+      0     0      359.0000     5                    359.0000       10         
+*     0+    0                          673.0000      359.0000       10   46.66%
+      0     0      410.6522     5      673.0000      Cuts: 18       38   38.98%
+      0     0      500.1935     5      673.0000      Cuts: 10       51   25.68%
+*     0     0      integral     0      535.0000      500.1935       57    6.51%
+
+Clique cuts applied:  2
+Implied bound cuts applied:  3
+Flow cuts applied:  3
+Gomory fractional cuts applied:  2
+param size: 1e-05obj. value: 535
+Values x = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 1.11022e-16, 0, 0, 0, 0, 1, 0, 0, 0,
+0, 0, 0, 1, 1, 0, 0, 0, 8.32667e-17, 1,
+0, 0]
+Values f = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+0, 1.11022e-16, 0, 0, 0, 0, 4, 0, 0, 0,
+0, 0, 0, 2, 1, 0, 0, 0, 3.33067e-16, 1,
+0, 0]
+Values y = [0, 0, 1, 0, 0, 1.11022e-16, 0, 0, 0, 0]

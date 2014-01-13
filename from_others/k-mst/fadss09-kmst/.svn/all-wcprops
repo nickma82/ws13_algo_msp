@@ -1,0 +1,53 @@
+K 25
+svn:wc:ra_dav:version-url
+V 23
+/svn/!svn/ver/328/trunk
+END
+results.txt
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/!svn/ver/157/trunk/results.txt
+END
+results3.txt
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/164/trunk/results3.txt
+END
+results4.txt
+K 25
+svn:wc:ra_dav:version-url
+V 36
+/svn/!svn/ver/163/trunk/results4.txt
+END
+.project
+K 25
+svn:wc:ra_dav:version-url
+V 30
+/svn/!svn/ver/2/trunk/.project
+END
+depend.in
+K 25
+svn:wc:ra_dav:version-url
+V 31
+/svn/!svn/ver/2/trunk/depend.in
+END
+.cproject
+K 25
+svn:wc:ra_dav:version-url
+V 31
+/svn/!svn/ver/2/trunk/.cproject
+END
+kmst.lp
+K 25
+svn:wc:ra_dav:version-url
+V 31
+/svn/!svn/ver/158/trunk/kmst.lp
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 32
+/svn/!svn/ver/159/trunk/Makefile
+END

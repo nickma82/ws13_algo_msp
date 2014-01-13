@@ -1,0 +1,354 @@
+\documentclass [11pt]{article}
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage[nice]{nicefrac}
+\usepackage{graphics}
+\usepackage{array}
+\usepackage{fullpage}
+\usepackage{verbatim} 
+\usepackage{color}
+\usepackage{natbib}
+%\usepackage{tikz}
+%\usepackage{pgfplots}
+%\usepackage{pgfplotstable}
+%\pgfplotsset{compat=1.3}% <-- moves axis labels near ticklabels (respects tick label widths)
+%\usetikzlibrary{arrows,shapes,automata,decorations,decorations.pathmorphing,shadows,patterns}
+%\usepgfplotslibrary{external} 
+%\tikzexternalize[prefix=figures/]% activate with a name prefix
+%\tikzexternalize
+%\usepackage[font=small,labelfont=bf]{caption}
+%\usepackage{subfig}
+
+   \evensidemargin\oddsidemargin
+
+\graphicspath{{resources/}}
+
+\title{Programming Exercise}
+\author{Stefan Hell, 0725714 \quad Johannes Reiter, 0625101}
+\date{\today}
+
+\begin{document}
+ 
+\maketitle
+
+\section{Overview}
+We have given an undirected graph $G=(V,E,w)$ with a nonnegative weighting
+function $ w : E \rightarrow \mathbb{R}_0^+$.
+The goal is to compute a minimum weight tree spanning exactly $k$ nodes.
+We need to model the k-MST problem based on three different formulations:
+(i) single commodity flows (SCF), 
+(ii) multi commodity flows (MCF), and
+(iii) Miller-Tucker-Zemlin subtour elimination constraints (MTZ).
+The following formulations have been solved with the ILOG CPLEX solver.
+The results to the corresponding formulations are given in Table \ref{tbl:scf},
+Table \ref{tbl:mcf}, and Table \ref{tbl:mtz}.
+In general, our Miller-Tucker-Zemlin formulation provides the best results.
+For all formulations we observed that some additional constraints can lead
+to an incredible speed-up of the solving process.
+
+
+\section{Single Commodity Flow Formulation}
+The mechanism of the Single Commodity Flow (SCF) is based on
+one outgoing flow of an artificial node. 
+All nodes receiving some flow are in the solution of the k-MST problem.
+We give a minimization problem where the variable $x_{ij}$ ($x_{ij} \in \{0,1\}$)
+is a decision variable which determines the edges $(i,j)$ in the solution
+of the k-MST.
+\begin{equation}
+min \sum_{(i,j) \in E, \ i,j \not =  0} w_{ij} * x_{ij} 
+\end{equation}
+The artificial node $0$ sends out exactly $k$ commodities.
+\begin{equation}
+\sum_{(0,j) \in E} f_{0j} = k 
+\end{equation}
+A k-MST with $k$ nodes needs $k-1$ edges.
+\begin{equation}
+\sum_{(i,j) \in E, \ i,j \not =  0} x_{ij} = k-1 
+\end{equation}
+The variable $f_{ij}$ holds the flow on the edge $(i,j)$. 
+The following equation ensures that each node within the k-MST
+receives one commodity and forwards the rest of the commodities. 
+All other nodes do not receive a commodity.
+\begin{equation}
+\sum_{u, (v,u) \in E} f_{vu} - \sum_{u, (u,v) \in E} f_{uv} = \min (1, \sum_{u, (v,u) \in E} f_{vu}) \qquad  \forall v \not = 0, v \ \in N 
+\end{equation}
+If we have a flow on the edge $(i,j)$, then this edge has to be
+in the solution of the k-MST.
+\begin{equation}
+f_{ij} \leq k * x_{ij} \qquad \forall (i,j) \in E 
+\end{equation}
+We ensure that only one edge from the artificial node to any
+other node is selected.
+\begin{equation}
+\sum_{(0,j) \in E} x_{0j} = 1 
+\end{equation}
+If the edge $(i,j)$ is in the solution, then also both end nodes $i$ and $j$ 
+have to be in the solution.
+\begin{equation}
+  x_{ij} \leq y_{i} \qquad \forall (i,j) \in E
+  \label{lbl:xy1}
+\end{equation}
+\begin{equation}
+  x_{ij} \leq y_{j} \qquad \forall (i,j) \in E
+  \label{lbl:xy2}
+\end{equation}
+\begin{equation}
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E
+ \label{lbl:xy3}
+\end{equation}
+Exactly k+1 nodes (with artificial node) must be selected.
+\begin{equation}
+  \sum_{i \in N} y_i = k + 1
+  \label{lbl:yk}
+\end{equation}
+
+\begin{equation}
+0 \leq f_{ij} \leq k \qquad \forall (i,j) \in E
+\end{equation}
+\begin{equation}
+x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+\end{equation}
+\begin{equation}
+  y_i \in \{0,1\} \qquad \forall i \in N
+\end{equation}
+
+\begin{table} \small
+\centering
+\begin{tabular}{cccccc}
+\hline
+test & k & objective & running  & branch-and-bound & optimum    \\
+instance & & function value & time & nodes & node  \\
+\hline
+g01.dat 	& 2 & 46 & 0.02 (0.01) & 0 (0) & 0 (0) \\
+		& 5  & 477 & 0.03 (0.03) & 6 (0) & 5 (0) \\
+		& 10 & 2692 & 0.11 (0.06) & 404 (122) & 140 (73) \\
+g02.dat 	& 4 & 373 & 0.07 (0.08) & 55 (95) & 51 (20) \\
+		& 10 & 1390 & 0.26 (0.34) & 532 (626) & 177 (279) \\
+		& 20 & 5565 & 0.64 (0.54) & 1365 (1294) & 786 (872) \\
+g03.dat 	& 10 & 725 & 3.57 (2.89) & 606 (1822) & 605 (1188) \\
+		& 25 & 3074 & 14.66 (9406.38) & 9279 (6132154) & 3181 (491497) \\
+		& 50 & 11400 & 7.79 (5.12) & 14989 (12639) & 9300 (895) \\
+g04.dat 	& 14 & 909 & 4.45 (113.24) & 524 (131475) & 523 (58812) \\
+		& 35 & 3292 & 15.49 & 5072 & 703 \\
+g05.dat 	& 20 & 1235 & 18.64 & 3794 & 3042 \\
+		& 50 & 4898 & 2831.9 & 2050884 & 68166 \\
+g06.dat 	& 40 & 2068 &  &  &   \\
+		& 100 & 6705 &  &  &   \\
+\hline
+\end{tabular}
+\caption{Results of the Single Commodity Flow formulation.
+In brackets we denote the running time without the constraints (\ref{lbl:xy1}), (\ref{lbl:xy2}), (\ref{lbl:xy3}), and (\ref{lbl:yk}).
+We observe a huge speedup with the additional constraints.}
+\label{tbl:scf}
+\end{table}
+
+\section{Multi Commodity Flow Formulation}
+In contrast to the SCF formulation, we have in the Multi Commodity Flow formulation
+a specific commodity for each node in the solution of the k-MST.
+The objective function is the same as before.
+\begin{equation}
+  min \sum_{(i,j) \in E , \ i,j \not = 0} {w_{ij} * x_{ij}}
+\end{equation}
+Since we have different commodities for the nodes in the solution,
+the artificial node can only send at most one commodity to a node,
+but all together exactly $k$ commodities are sent.
+\begin{equation}
+  \sum_{j, j \neq 0} {f_{0j}^{l}} \leq 1 \qquad \forall l \in N \backslash (0)
+\end{equation}
+\begin{equation}
+  \sum_{l=1}^{N} \sum_{j, j \neq 0} {f_{0j}^{l}} = k
+\end{equation}
+The same holds for the receiving nodes.
+A node can receive at most one commodity, but all nodes together
+have to receive exactly $k$ commodities.
+\begin{equation}
+  \sum_{i,(i,l) \in E} {f_{il}^{l}} \leq 1 \qquad \forall l \in N \backslash (0)
+\end{equation}
+\begin{equation}
+  \sum_{l=1}^{N} \sum_{i,(i,l) \in E} {f_{il}^{l}} = k
+\end{equation}
+If a node is not the artificial node and not the target node of some 
+commodity, the sum of the incoming flow and the outgoing flow has to
+be zero.
+\begin{equation}
+  \sum_{i, (i,j) \in E} {f_{ij}^{l}} - \sum_{i, (j,i) \in E} {f_{ji}^{l}} = 0 \qquad \forall j,l \in N \backslash (0), j \neq l
+\end{equation}
+To tighten the constraints we ensure that the outgoing flow from node 0
+in commodity l is equal to the incoming flow of node l in commodity l.
+\begin{equation}
+  \sum_{j, j \neq 0} {f_{0j}^{l}} = \sum_{i, (i,l) \in E} {f_{il}^{l}} \qquad \forall l \in N \backslash (0)
+\end{equation}
+We ensure that only one edge from the artificial node to any
+other node is selected.
+\begin{equation}
+\sum_{(0,j) \in E} x_{0j} = 1 
+\end{equation}
+If the edge $(i,j)$ is in the solution, then also both end nodes $i$ and $j$ 
+have to be in the solution.
+\begin{equation}
+  x_{ij} \leq y_{i} \qquad \forall (i,j) \in E
+  \label{lbl:mcfxy1}
+\end{equation}
+\begin{equation}
+  x_{ij} \leq y_{j} \qquad \forall (i,j) \in E
+  \label{lbl:mcfxy2}
+\end{equation}
+\begin{equation}
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E
+ \label{lbl:mcfxy3}
+\end{equation}
+Exactly k+1 nodes (with artificial node) must be selected.
+\begin{equation}
+  \sum_{i \in N} y_i = k + 1
+  \label{lbl:mcfyk}
+\end{equation}
+
+\begin{equation}
+ 0 \leq f_{ij}^{l} \leq x_{ij} \qquad \forall (i,j) \in E, i \neq j, \forall l \in N \backslash (0)
+\end{equation}
+\begin{equation}
+x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+\end{equation}
+\begin{equation}
+  y_i \in \{0,1\} \qquad \forall i \in N
+\end{equation}
+
+\begin{table} \small
+\centering
+\begin{tabular}{cccccc}
+\hline
+test & k & objective & running  & branch-and-bound & optimum    \\
+instance & & function value & time & nodes & node  \\
+\hline
+g01.dat 	& 2 & 46 & 0.04 (0.02) & 0 (0) & 0 (0) \\
+		& 5 & 477 & 0.06 (0.06) & 0 (16) & 0 (10) \\
+		& 10 & 2692 & 0.03 (0.02) & 0 (3) & 0 (1) \\
+g02.dat 	& 4 & 373 & 0.56 (1.2) & 9 (68) & 1 (53) \\
+		& 10 & 1390 & 0.2 (1.36) & 0 (49) & 0 (13) \\
+		& 20 & 5565 & 0.19 (1.41) & 0 (237) & 0 (32) \\
+g03.dat 	& 10 & 725 & 2.62 (47.12) & 0 (168) & 0 (0) \\
+		& 25 & 3074 & 5.18 (14026.1) & 0 (53005) & 0 \\
+		& 50 & 11400 & 3.28 (138.26) & 0 (960) & 0 (76) \\
+g04.dat 	& 14 & 909 & 25.06 (488.9) & 23 (802) & 10 (0) \\
+		& 35 & 3292 & 42.53 (20800.9) & 3 (9001) & 0 (494) \\
+g05.dat 	& 20 & 1235 & 40.93 (45533.8) & 7 (8925) & 0 (644) \\
+		& 50 & 4898 & 59.41 & 0 & 0 \\
+g06.dat 	& 40 & 2068 & 4931.54 & 81 & 6 \\
+		& 100 & 6705 & 3679.54 & 33 & 0 \\
+\hline
+\end{tabular}
+\caption{Results of the Multi Commodity Flow formulation.
+In brackets we denote the running time without the constraints (\ref{lbl:mcfxy1}), (\ref{lbl:mcfxy2}), (\ref{lbl:mcfxy3}), and (\ref{lbl:mcfyk}).
+We observe a huge speedup with the additional constraints.}
+\label{tbl:mcf}
+\end{table}
+
+\section{Miller-Tucker-Zemlin Formulation}
+The Miller-Tucker-Zemlin formulation is based on the sequential ordering
+of the nodes.
+Therefore, the additional variable $u_i$ is introduced
+which determines the order of the nodes in the solution
+of the k-MST problem.
+We use again the same objective function as for the other formulations above.
+\begin{equation}
+  min \sum_{(i,j) \in E , \ i,j \not = 0} {w_{ij} * x_{ij}}
+\end{equation}
+As we already explained above the following constraint with the variable
+$u_i$ determines the order between the nodes and ensures that we do
+not get a cycle.
+\begin{equation}
+  u_{i} + x_{ij} \leq u_{j} + k*(1- x_{ij}) \qquad \forall (i,j) \in E 
+\end{equation}
+Since we want only $k$ nodes in the solution, all $u_i$'s have to be
+at most $k$.
+\begin{equation}
+  0 \leq u_i \leq k \qquad \forall i \in N \backslash (0) 
+\end{equation}
+The artifical node has the order $0$ and it has exactly one outgoing edge.
+\begin{equation}
+  u_0 = 0 
+\end{equation}
+\begin{equation}
+  \sum_{(0,j) \in E} x_{0j} = 1 
+\end{equation}
+The solution must have exactly $k-1$ edges.
+\begin{equation}
+  \sum_{(i,j) \in E, \ i,j \not =  0} x_{ij} = k-1 
+\end{equation}
+To further tighten the constraints, we restrict the sum of the orders
+from the nodes in the solution.
+\begin{equation}
+  \sum_{i \in N} u_i = \frac{k*(k+1)}{2} 
+\end{equation}
+Furthermore, we also know that we need exactly $k$ nodes with an
+order $u_i > 0$ in the solution.
+\begin{equation}
+  u_i \leq k*y_i \qquad \forall i \in N
+\end{equation}
+\begin{equation}
+  \sum_{i \in N} y_i = k
+\end{equation}
+Since we have arcs in our formulation, we know that each node 
+has at most one incoming arc in the solution. 
+\begin{equation}
+  \sum_{i \in N} {x_{ij}} \leq 1 \qquad \forall j \in N \backslash (0)
+\end{equation}
+Whenever any arc is chosen, the connected nodes must have an order.
+\begin{equation}
+  x_{ij} \leq u_i \qquad \forall (i,j) \in E, i \neq 0
+\end{equation}
+\begin{equation}
+  x_{ij} \leq u_j \qquad \forall (i,j) \in E, j \neq 0
+\end{equation}
+If the node $i$ and the edge $(i,j)$ is in the solution, then also the node $j$ has to be in the solution.
+\begin{equation}
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E, i \neq 0, j \neq 0
+ \label{lbl:mtzxy3}
+\end{equation}
+
+\begin{equation}
+x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+\end{equation}
+\begin{equation}
+  y_i \in \{0,1\} \qquad \forall i \in N
+\end{equation}
+
+
+
+\begin{table} \small
+\centering
+\begin{tabular}{cccccc}
+\hline
+test & k & objective & running  & branch-and-bound & optimum    \\
+instance & & function value & time & nodes & node  \\
+\hline
+g01.dat 	& 2 & 46 & 0.01 (0.01) & 0 (0) & 0 (0) \\
+		& 5 & 477 & 0.02 (0.03) & 7 (92) & 5 (7) \\
+		& 10 & 2692 & 0.07 (0.04) & 36 (77) & 0 (13) \\
+g02.dat 	& 4 & 373 & 0.12 (0.14) & 224 (569) & 176 (384) \\
+		& 10 & 1390 & 0.33 (1.73) & 437 (4738) & 239 (2245) \\
+		& 20 & 5565 & 0.84 (0.98) & 1367 (2228) & 220 (790) \\
+g03.dat 	& 10 & 725 & 1.06 (130.98) & 478 (159431) & 476 (64944) \\
+		& 25 & 3074 & 7.22 & 4378 & 918 \\
+		& 50 & 11400 & 96.64 (1458.96) & 172369 (1934568) & 90 (136498) \\
+g04.dat 	& 14 & 909 & 1.56 & 518 & 517 \\
+		& 35 & 3292 & 3.23 & 966 & 742 \\
+g05.dat 	& 20 & 1235 & 6.11 & 818 & 695 \\
+		& 50 & 4898 & 36.3 & 15754 & 1255 \\
+g06.dat 	& 40 & 2068 & 209.24 & 43771 & 5540 \\
+		& 100 & 6705 & 216.64 & 70193 & 1640 \\
+\hline
+\end{tabular}
+\caption{Results of the Miller-Tucker-Zemlin formulation.
+In brackets we denote the running time without the constraint (\ref{lbl:mtzxy3}). %(\ref{lbl:xy2}), (\ref{lbl:xy3}), and (\ref{lbl:yk}).
+We observe a huge speedup with the additional constraint.}
+\label{tbl:mtz}
+\end{table}
+
+%\bibliographystyle{plainnat}
+%\bibliography{C:/Users/jreiter/Documents/university/IST_Austria/Own_papers/reference_db}
+
+\end{document}

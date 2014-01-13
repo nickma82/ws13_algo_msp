@@ -1,0 +1,2 @@
+ILOG_LICENSE_FILE=/home1/share/ILOG/ilm/access.ilm
+export ILOG_LICENSE_FILE
