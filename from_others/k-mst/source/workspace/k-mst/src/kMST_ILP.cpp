@@ -96,7 +96,7 @@ void kMST_ILP::modelSCF()
 		expr += instance.edges.at(e).weight * x[e];
 		expr += instance.edges.at(e).weight * x[e+m];
 	}
-	model.add(IloMinimize(env, expr));
+	model.add(IloMinimize(env, expr));  //let CPLEX minimize the objective function
 	expr.end();
 
 	// (11) // Initialization of flow variable
