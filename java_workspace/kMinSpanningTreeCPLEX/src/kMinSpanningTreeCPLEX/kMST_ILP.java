@@ -185,8 +185,10 @@ public class kMST_ILP {
 		IloLinearIntExpr obj = cplex.linearIntExpr();
 		for (int e = 0; e < m; e++) {
 			int weight = this.instance.getEdge(e).getWeight();
-			obj.addTerm(x[e], weight);
-			obj.addTerm(x[e + m], weight);
+			if (weight != 0) {
+				obj.addTerm(x[e], weight);
+				obj.addTerm(x[e + m], weight);
+			}
 		}
 		cplex.addMinimize(obj);
 
