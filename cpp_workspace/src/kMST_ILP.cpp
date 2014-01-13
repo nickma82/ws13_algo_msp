@@ -110,6 +110,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	}
 
 	// 1 Create the objective function
+	// n-1 because edges beginning from 0 are ignored
 	IloExpr expression( this->env );
 	for( size_t edgeNum = this->n-1; edgeNum < this->m_edges; ++edgeNum) {
 		int edgeWeight = this->instance.edges[edgeNum].weight;
@@ -128,60 +129,57 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 		flow[edgeNum] = IloIntVar( this->env, 0, this->k, varName.str().c_str() );
 	}
 
-	// 2 Flow expression from node 0 (flow k outgoing)
-	IloNumExpr Expr2( this->env );
+	// flow from j to "0" is k
+	IloNumExpr Expr2( this->env ), Expr3( this->env );
 	for( auto it = instance.incidentEdges[0].begin();
-			it != instance.incidentEdges.at(0).end(); ++it ) {
-		if(instance.edges.at(*it).v1 == 0)
-		{	// outgoing edge
-			Expr2 += flow[*it];
-			Expr2 -= flow[(*it)+m];
-		}
-		else
-		{	// incoming edge
-			Expr2 -= flow[*it];
-			Expr2 += flow[(*it)+m];
+			it != instance.incidentEdges[0].end(); ++it ) {
+		if( instance.edges[*it].v1 == 0 ) {
+			// outgoing edge
+			Expr2 += flow[ *it ];
+			Expr3 += flow[ (*it)+m ];
 		}
 
 	}
-	this->model.add(Expr2 == k);
+	this->model.add( Expr2 == k );
 	Expr2.end();
+	this->model.add( Expr3 == 0 ); //returning flow forbidden
+	Expr3.end();
 
 
-	// 4 check flow
-	for(size_t v = 1; v < this->n; ++v )
+	// 4 check flow (for all nodes != 0)
+	for(size_t node = 1; node < this->n; ++node )
 	{
 		IloNumExpr Expr3( this->env );
 		IloNumExpr Expr3_right( this->env );
 
-		for( auto it = instance.incidentEdges[v].begin();
-				it != instance.incidentEdges.at(v).end(); ++it ) {
-			if(instance.edges.at(*it).v1 == v) {
+		for( auto it = instance.incidentEdges[node].begin();
+				it != instance.incidentEdges.at(node).end(); ++it ) {
+			if( instance.edges[*it].v1 == node ) {
 				// outgoing edge
-				Expr3 -= flow[*it];
-				Expr3 += flow[(*it)+m];
+				Expr3 -= flow[ *it ];
+				Expr3 += flow[ (*it) + m ];
 
-				Expr3_right += flow[(*it)+m];
+				Expr3_right += flow[ (*it) + m ];
 			} else {
 				// incoming edge
-				Expr3 += flow[*it];
-				Expr3 -= flow[(*it)+m];
+				Expr3 += flow[ *it ];
+				Expr3 -= flow[ (*it) + m ];
 
-				Expr3_right += flow[*it];
+				Expr3_right += flow[ *it ];
 			}
 		}
-		this->model.add(Expr3 == IloMin(1,Expr3_right));
+		this->model.add( Expr3 == IloMin(1,Expr3_right) );
 
 		Expr3.end();
 		Expr3_right.end();
 	}
 
 	// 5 force x[e] to be set if flow exist
-	for(size_t e=0; e < this->m_edges * 2; ++e )
+	for(size_t edge = 0; edge < this->m_edges * 2; ++edge )
 	{
 		IloNumExpr Expr4( this->env );
-		Expr4 += flow[e];
-		this->model.add(Expr4 <= (k * x[e]));
+		Expr4 += flow[edge];
+		this->model.add(Expr4 <= (k * x[edge]));
 		Expr4.end();
 	}
 
