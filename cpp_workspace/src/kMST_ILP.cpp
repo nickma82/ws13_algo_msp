@@ -9,7 +9,7 @@ std::string kMST_Solution::getResultStream() {
 
 	outt << "CPLEX status: " << this->cplexStatus << std::endl;
 	outt << "Branch-and-Bound nodes: " << this->branchAndBoundNodes << std::endl;
-	outt << "Objective value: " << this->objectValue << std::endl;
+	outt << "Objective value: " << this->objectiveValue << std::endl;
 	outt << "CPU time: " << this->cpuTime << std::endl;
 
 	return outt.str();
@@ -36,7 +36,7 @@ kMST_ILP::~kMST_ILP()
 	this->outputFile.close();
 }
 
-void kMST_ILP::solve()
+kMST_Solution kMST_ILP::solve()
 {
 	try {
 		// initialize CPLEX
@@ -71,11 +71,13 @@ void kMST_ILP::solve()
 		kMST_Solution solution(this->instance.name, this->k);
 		solution.cplexStatus = tmpStatus.str();
 		solution.branchAndBoundNodes = cplex.getNnodes();
-		solution.objectValue = cplex.getObjValue();
+		solution.objectiveValue = cplex.getObjValue();
 		solution.cpuTime = Tools::CPUtime();
 
 		std::cout << solution.getResultStream();
 		this->outputFile << solution.getResultStream();
+
+		return solution;
 	}
 	catch( IloException& e ) {
 		std::cerr << "kMST_ILP: exception " << e << std::endl;
@@ -358,13 +360,13 @@ void kMST_ILP::modelMTZ() {
 	for (size_t v = 1; v < n; ++v) {
 		for ( auto it = instance.incidentEdges[v].begin();
 				it != instance.incidentEdges[v].end(); ++it) {
-			if (instance.edges.at(*it).v1 == 0) {
+			if ( instance.edges[*it].v1 == 0 ) {
 				IloNumExpr Expr6( this->env );
 				IloNumExpr Expr7( this->env );
 				Expr6 += x[(*it)];
 				Expr7 += x[(*it) + m];
-				model.add(Expr6 <= u[instance.edges.at(*it).v2]);
-				model.add(Expr7 <= u[instance.edges.at(*it).v2]);
+				model.add(Expr6 <= u[instance.edges[*it].v2]);
+				model.add(Expr7 <= u[instance.edges[*it].v2]);
 				Expr6.end();
 				Expr7.end();
 			} else {
@@ -372,8 +374,8 @@ void kMST_ILP::modelMTZ() {
 				IloNumExpr Expr7( this->env );
 				Expr6 += x[(*it)];
 				Expr7 += x[(*it)];
-				model.add(Expr6 <= u[instance.edges.at(*it).v1]);
-				model.add(Expr7 <= u[instance.edges.at(*it).v2]);
+				model.add(Expr6 <= u[instance.edges[*it].v1]);
+				model.add(Expr7 <= u[instance.edges[*it].v2]);
 				Expr6.end();
 				Expr7.end();
 
@@ -381,8 +383,8 @@ void kMST_ILP::modelMTZ() {
 				IloNumExpr Expr41( this->env );
 				Expr40 += x[(*it) + m];
 				Expr41 += x[(*it) + m];
-				model.add(Expr40 <= u[instance.edges.at(*it).v1]);
-				model.add(Expr41 <= u[instance.edges.at(*it).v2]);
+				model.add(Expr40 <= u[instance.edges[*it].v1]);
+				model.add(Expr41 <= u[instance.edges[*it].v2]);
 				Expr40.end();
 				Expr41.end();
 			}

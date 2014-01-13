@@ -26,7 +26,7 @@ public:
 	// results
 	std::string cplexStatus;
 	double cpuTime;
-	double objectValue;
+	double objectiveValue;
 	unsigned int branchAndBoundNodes;
 };
 
@@ -50,7 +50,7 @@ private:
 	/**
 	 * Builds single commodity flow model
 	 */
-	void modelSCF(bool makeFasterResults = false);
+	void modelSCF(bool makeFasterResults = true);
 
 	void modelMCF();
 	/**
@@ -61,7 +61,7 @@ private:
 public:
 	kMST_ILP( Instance& _instance, std::string _model_type, int _k );
 	~kMST_ILP();
-	void solve();
+	kMST_Solution solve();
 
 private:
 	void setCPLEXParameters();
