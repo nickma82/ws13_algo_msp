@@ -43,11 +43,45 @@ TEST singleCommoditiveFlow_g04(void) {
 	PASS();
 }
 
+TEST millerTuckerZemlin_g02(void) {
+
+	Instance instance( "data/g02.dat" );
+	kMST_ILP *ilp;
+	kMST_Solution solution("", 0);
+
+	ilp = new kMST_ILP( instance, "mtz", 4 ); //single commoditive flow
+	solution = ilp->solve();
+    ASSERT_EQ(373, std::floor(0.1 + solution.objectiveValue));
+    delete ilp;
+
+	ilp = new kMST_ILP( instance, "mtz", 10 );
+	solution = ilp->solve();
+	ASSERT_EQ( 1390, std::floor(0.1 + solution.objectiveValue) );
+	PASS();
+}
+
+TEST millerTuckerZemlin_g04(void) {
+	Instance instance( "data/g04.dat" );
+	kMST_ILP *ilp;
+	kMST_Solution solution("", 0);
+
+	ilp = new kMST_ILP( instance, "mtz", 14 ); //single commoditive flow
+	solution = ilp->solve();
+    ASSERT_EQ(909, std::floor(0.1 + solution.objectiveValue));
+    delete ilp;
+
+	ilp = new kMST_ILP( instance, "mtz", 35 );
+	solution = ilp->solve();
+	ASSERT_EQ(3292, std::floor(0.1 + solution.objectiveValue));
+
+	PASS();
+}
+
 SUITE(scf_suite) {
 	RUN_TEST(singleCommoditiveFlow_g02);
 	RUN_TEST(singleCommoditiveFlow_g04);
-//	RUN_TEST(millerTuckerZemlin_g02);
-//	RUN_TEST(millerTuckerZemlin_g04);
+	RUN_TEST(millerTuckerZemlin_g02);
+	RUN_TEST(millerTuckerZemlin_g04);
 }
 
 void usage()
