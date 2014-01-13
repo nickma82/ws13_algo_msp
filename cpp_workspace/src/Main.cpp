@@ -18,11 +18,14 @@ TEST singleCommoditiveFlow_g02(void) {
 	ilp = new kMST_ILP( instance, "scf", 4 ); //single commoditive flow
 	solution = ilp->solve();
     ASSERT_EQ(373, std::floor(0.1 + solution.objectiveValue));
+    ASSERT_EQ("Optimal", solution.cplexStatus);
     delete ilp;
 
 	ilp = new kMST_ILP( instance, "scf", 10 );
 	solution = ilp->solve();
 	ASSERT_EQ( 1390, std::floor(0.1 + solution.objectiveValue) );
+	ASSERT_EQ("Optimal", solution.cplexStatus);
+
 	PASS();
 }
 
@@ -34,11 +37,13 @@ TEST singleCommoditiveFlow_g04(void) {
 	ilp = new kMST_ILP( instance, "scf", 14 ); //single commoditive flow
 	solution = ilp->solve();
     ASSERT_EQ(909, std::floor(0.1 + solution.objectiveValue));
+    ASSERT_EQ("Optimal", solution.cplexStatus);
     delete ilp;
 
 	ilp = new kMST_ILP( instance, "scf", 35 );
 	solution = ilp->solve();
 	ASSERT_EQ(3292, std::floor(0.1 + solution.objectiveValue));
+	ASSERT_EQ("Optimal", solution.cplexStatus);
 
 	PASS();
 }
@@ -52,11 +57,13 @@ TEST millerTuckerZemlin_g02(void) {
 	ilp = new kMST_ILP( instance, "mtz", 4 ); //single commoditive flow
 	solution = ilp->solve();
     ASSERT_EQ(373, std::floor(0.1 + solution.objectiveValue));
+    ASSERT_EQ("Optimal", solution.cplexStatus);
     delete ilp;
 
 	ilp = new kMST_ILP( instance, "mtz", 10 );
 	solution = ilp->solve();
 	ASSERT_EQ( 1390, std::floor(0.1 + solution.objectiveValue) );
+	ASSERT_EQ("Optimal", solution.cplexStatus);
 	PASS();
 }
 
