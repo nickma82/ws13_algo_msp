@@ -4,41 +4,63 @@
 #include "Tools.h"
 #include "Instance.h"
 #include <ilcplex/ilocplex.h>
-
-using namespace std;
+#include <fstream>
+#include <stdint.h>
+#include <sstream>      // std::ostringstream
 
 ILOSTLBEGIN
 
-class kMST_ILP
-{
+class kMST_Solution {
+public:
+	kMST_Solution(std::string _testInstance, const int _k);
 
+	/**
+	 * get the solution as ostringstream
+	 */
+	std::string getResultStream();
+
+	// inputs
+	std::string testInstance;
+	int k;
+
+	// results
+	std::string cplexStatus;
+	double cpuTime;
+	double objectValue;
+	unsigned int branchAndBoundNodes;
+};
+
+class kMST_ILP {
 private:
-
 	// input data
 	Instance& instance;
-	string model_type;
+	std::string model_type;
 	int k;
 	// number of edges and nodes including root node and root edges
 	unsigned int m, n;
+	uint16_t m_edges;
 
 	IloEnv env;
 	IloModel model;
 	IloCplex cplex;
 
-	void modelSCF();
+	//Local vars
+	std::fstream outputFile;
+
+	/**
+	 * Builds single commodity flow model
+	 */
+	void modelSCF(bool makeFasterResults = false);
 	void modelMCF();
 	void modelMTZ();
 
 public:
-
-	kMST_ILP( Instance& _instance, string _model_type, int _k );
+	kMST_ILP( Instance& _instance, std::string _model_type, int _k );
 	~kMST_ILP();
 	void solve();
 
 private:
-
 	void setCPLEXParameters();
-
 };
 // kMST_ILP
 

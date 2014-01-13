@@ -1,11 +1,8 @@
 # For home installation adjust CPLEX_DIR, ARCH, GPP, CXXFLAGS, etc.
 
-HOSTNAME = $(shell hostname)
-USERNAME = $(shell whoami)
-
 EXEC = ./kmst -f data/g01.dat -m scf -k 5
 
-DEBUG = 0
+DEBUG = 1
 
 CPLEX_VERSION = 12.5
 #CPLEX_DIR = /home/nickma/ILOG/cplex-$(CPLEX_VERSION)

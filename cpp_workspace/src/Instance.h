@@ -10,8 +10,7 @@
 
 using namespace std;
 
-class Instance
-{
+class Instance {
 
 public:
 
@@ -24,14 +23,16 @@ public:
 	// number of nodes and edges
 	unsigned int n_nodes, n_edges;
 	// array of edges
-	vector<Edge> edges;
+	vector<Instance::Edge> edges;
 	// incident edges denoted by index in vector <edges>
 	vector<list<unsigned int> > incidentEdges;
+
+	// instance name
+	std::string name;
 
 	// constructor
 	Instance( string file );
 
 };
-// Instance
 
 #endif //__INSTANCE__H__
