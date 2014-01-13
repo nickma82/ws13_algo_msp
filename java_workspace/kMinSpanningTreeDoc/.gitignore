@@ -1,0 +1,26 @@
+
+#ignore editor-files
+*.bak
+*.swp
+*.swo
+*~
+
+#ignore latex build-files
+*.aux
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.bbl
+*.blg
+*.lof
+*.idx
+*.ilg
+*.ind
+*.fls
+*.fdb*
+
+#ignore pdf-files
+*.pdf
+/document.synctex.gz
