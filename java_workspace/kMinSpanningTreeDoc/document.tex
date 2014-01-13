@@ -1,0 +1,40 @@
+%%This is a very basic article template.
+%%There is just one section and two subsections.
+\documentclass{article}
+
+\title{Programming Exercise}
+\author{Sebastian Neumaier, 0925308}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Task}
+
+Formulate the k-MST problem as (mixed) integer linear programs (MILPs), based on
+\begin{itemize}
+\item Miller-Tucker-Zemlin subtour elimination constraints (\ref{mtz})
+\item single commodity flows (\ref{scf})
+\item multi commodity flows (\ref{mcf})
+\end{itemize}
+\section{Solution}
+
+\subsection{Miller-Tucker-Zemlin subtour \label{mtz}}
+
+
+\subsection{single commodity flows \label{scf}}
+Objective function:
+\begin{equation}
+min \sum_{(i,j) \in E} c_{ij} x_{ij}
+\end{equation}
+
+Constraints:\\
+$k-1$ selected edges
+\begin{equation}
+\sum_{(i,j) \in E} x_{ij} = k - 1
+\end{equation}
+
+\subsection{multi commodity flows \label{mcf}}
+
+\end{document}
