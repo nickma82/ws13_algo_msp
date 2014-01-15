@@ -21,6 +21,7 @@ public class kMST_ILP {
 	IloCplex cplex;
 	private IloIntVar[] f;
 	private IloIntVar[] x;
+	private IloNumVar[][] g;
 
 	public kMST_ILP(Instance instance, String model_type, int k) {
 		this.instance = instance;
@@ -60,11 +61,6 @@ public class kMST_ILP {
 			cplex.solve();
 			System.out.println("CPLEX finished.");
 			System.out.println();
-			System.out.println("CPLEX status: " + cplex.getStatus());
-			System.out.println("Branch-and-Bound nodes: " + cplex.getNnodes());
-			System.out.println("Objective value: " + cplex.getObjValue());
-			System.out.println("CPU time: " + Tools.CPUtime());
-			System.out.println();
 
 			if (this.model_type.equals("scf")) {
 				System.out.println("Variables:");
@@ -76,7 +72,28 @@ public class kMST_ILP {
 								+ ": " + selected + ", " + value);
 					}
 				}
+			} else if(this.model_type.equals("mcf")) {
+				System.out.println("Variables:");
+				for(int c = 1; c < n; c++) {
+					System.out.println();
+					System.out.println("Commodity " + c + ":");
+					for (int i = 0; i < 2 * m; i++) {
+						double value = cplex.getValue(g[c-1][i]);
+						double selected = cplex.getValue(x[i]);
+						if (selected > 0) {
+							System.out.println(i + " - "
+									+ instance.getEdge(i % m) + ": x: " + selected
+									+ ", f:" + value);
+						}
+					}
+				}
 			}
+			System.out.println();
+			System.out.println("CPLEX status: " + cplex.getStatus());
+			System.out.println("Branch-and-Bound nodes: " + cplex.getNnodes());
+			System.out.println("Objective value: " + cplex.getObjValue());
+			System.out.println("CPU time: " + Tools.CPUtime());
+			System.out.println();
 
 		} catch (IloException e) {
 			System.err.println("kMST_ILP: exception " + e.getMessage());
@@ -195,9 +212,132 @@ public class kMST_ILP {
 		}
 		cplex.addMinimize(obj);
 
-		IloNumVar[][] g = new IloNumVar[n - 1][];
-		for (int i = 0; i < n - 1; i++) {
-			g[i] = cplex.numVarArray(2 * m, 0, 1);
+		// 1 outgoing edge from node 0
+		IloLinearNumExpr constr1 = cplex.linearNumExpr();
+		for (int e : instance.getIncidentEdges(0)) {
+			if (instance.getEdge(e).getV1() == 0) {
+				constr1.addTerm(1, x[e]);
+			}
+		}
+		cplex.addEq(constr1, 1);
+		
+		// no edge to node 0 selected
+		IloLinearNumExpr constr1_5 = cplex.linearNumExpr();
+		for (int e : instance.getIncidentEdges(0)) {
+			if (instance.getEdge(e).getV1() == 0) {
+				constr1_5.addTerm(1, x[e + m]);
+			} else {
+				constr1_5.addTerm(1, x[e]);
+			}
+		}
+		cplex.addEq(constr1_5, 0);
+
+		// k - 1 selected edges
+		IloLinearNumExpr constr2 = cplex.linearNumExpr();
+		for (int e = 0; e < m; e++) {
+			if (instance.getEdge(e).getV1() != 0
+					&& instance.getEdge(e).getV2() != 0) {
+				constr2.addTerm(1, x[e]);
+				constr2.addTerm(1, x[e + m]);
+			}
+		}
+		cplex.addEq(k - 1, constr2);
+
+		// multi commodity flow variables
+		g = new IloNumVar[n - 1][];
+		for (int c = 0; c < n - 1; c++) {
+			g[c] = cplex.numVarArray(2 * m, 0, 1);
+		}
+
+		// set edge selected if some flow is on it
+		for (IloNumVar[] c : g) {
+			for (int e = 0; e < 2 * m; e++) {
+				cplex.addLe(c[e], x[e]);
+			}
+		}
+
+		// k commodities are sent from node 0
+		IloLinearNumExpr constr3 = cplex.linearNumExpr();
+		for (IloNumVar[] i : g) {
+			for (int e : instance.getIncidentEdges(0)) {
+				if (instance.getEdge(e).getV1() == 0) {
+					constr3.addTerm(1, i[e]);
+				}
+			}
+		}
+		cplex.addEq(k, constr3);
+
+		// flow from j to node 0 is 0 is any case
+		for (IloNumVar[] c : g) {
+			IloLinearNumExpr constr4 = cplex.linearNumExpr();
+			for (int e : instance.getIncidentEdges(0)) {
+				if (instance.getEdge(e).getV1() == 0) {
+					constr4.addTerm(1, c[e + m]);
+				}
+			}
+			cplex.addEq(0, constr4);
+		}
+
+		// node 0 can send at most 1 commodity to a node
+		for (IloNumVar[] c : g) {
+			IloLinearNumExpr constr5 = cplex.linearNumExpr();
+			for (int e : instance.getIncidentEdges(0)) {
+				if (instance.getEdge(e).getV1() == 0) {
+					constr5.addTerm(1, c[e]);
+				}
+			}
+			cplex.addLe(constr5, 1);
+		}
+
+		// all nodes together receive k commodities
+		IloLinearNumExpr constr6 = cplex.linearNumExpr();
+		for (int c = 1; c < n; c++) {
+			for (int e : instance.getIncidentEdges(c)) {
+				if (instance.getEdge(e).getV2() == c) {
+					constr6.addTerm(1, g[c - 1][e]);
+				} else {
+					constr6.addTerm(1, g[c - 1][e + m]);
+				}
+			}
+		}
+		cplex.addEq(k, constr6);
+
+		// a node can receive at most 1 commodity
+		for (int c = 1; c < n; c++) {
+			IloLinearNumExpr constr7 = cplex.linearNumExpr();
+			for (int e : instance.getIncidentEdges(c)) {
+				if (instance.getEdge(e).getV1() == c) {
+					constr7.addTerm(1, g[c - 1][e]);
+				} else {
+					constr7.addTerm(1, g[c - 1][e + m]);
+				}
+			}
+			cplex.addLe(constr7, 1);
+		}
+
+		// sum of inflow equals sum of outflow
+		// for any node, except a node is the target of a commodity (c == j)
+		for (int c = 1; c < n; c++) {
+			for (int j = 1; j < n; j++) {
+				IloLinearNumExpr inflow = cplex.linearNumExpr();
+				IloLinearNumExpr outflow = cplex.linearNumExpr();
+				if (c != j) {
+					for (int e : instance.getIncidentEdges(j)) {
+						if (instance.getEdge(e).getV2() == j) {
+							// inflow of node j on edge (i,j)
+							inflow.addTerm(1, g[c - 1][e]);
+							// outflow of node j on edge (j,i)
+							outflow.addTerm(1, g[c - 1][e + m]);
+						} else {
+							// outflow of node j on edge (j,i)
+							outflow.addTerm(1, g[c - 1][e]);
+							// inflow of node j on the back edge of (j,i)
+							inflow.addTerm(1, g[c - 1][e + m]);
+						}
+					}
+				}
+				cplex.addEq(inflow, outflow);
+			}
 		}
 	}
 
@@ -254,9 +394,9 @@ public class kMST_ILP {
 
 		// sum of selected nodes is k
 		cplex.addEq(k, cplex.sum(node));
-		
+
 		// only give order to node if it is selected
-		for(int i = 0; i < n; i++) {
+		for (int i = 0; i < n; i++) {
 			cplex.addLe(u[i], cplex.prod(k, node[i]));
 		}
 
@@ -284,9 +424,9 @@ public class kMST_ILP {
 				cplex.addLe(x[e + m], u[instance.getEdge(e).getV2()]);
 			}
 		}
-		
-		// order of nodes, 
-		for(int e = 0; e < m; e++) {
+
+		// order of nodes,
+		for (int e = 0; e < m; e++) {
 			// forward edge
 			IloLinearNumExpr constr4 = cplex.linearNumExpr();
 			constr4.addTerm(1, u[instance.getEdge(e).getV1()]);
@@ -295,7 +435,7 @@ public class kMST_ILP {
 
 			IloLinearNumExpr constr5 = cplex.linearNumExpr(1);
 			constr5.addTerm(-1, x[e]);
-			
+
 			cplex.addLe(constr4, cplex.prod(k, constr5));
 
 			// back edge
@@ -306,7 +446,7 @@ public class kMST_ILP {
 
 			IloLinearNumExpr constr7 = cplex.linearNumExpr(1);
 			constr7.addTerm(-1, x[e + m]);
-			
+
 			cplex.addLe(constr6, cplex.prod(k, constr7));
 		}
 	}
