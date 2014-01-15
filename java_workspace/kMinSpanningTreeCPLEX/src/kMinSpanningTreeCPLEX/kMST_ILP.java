@@ -65,13 +65,16 @@ public class kMST_ILP {
 			System.out.println("Objective value: " + cplex.getObjValue());
 			System.out.println("CPU time: " + Tools.CPUtime());
 			System.out.println();
-			System.out.println("Variables:");
-			for (int i = 0; i < 2 * m; i++) {
-				double value = cplex.getValue(f[i]);
-				double selected = cplex.getValue(x[i]);
-				if (selected > 0) {
-					System.out.println(i + " - " + instance.getEdge(i % m)
-							+ ": " + selected + ", " + value);
+
+			if (this.model_type.equals("scf")) {
+				System.out.println("Variables:");
+				for (int i = 0; i < 2 * m; i++) {
+					double value = cplex.getValue(f[i]);
+					double selected = cplex.getValue(x[i]);
+					if (selected > 0) {
+						System.out.println(i + " - " + instance.getEdge(i % m)
+								+ ": " + selected + ", " + value);
+					}
 				}
 			}
 
@@ -199,6 +202,101 @@ public class kMST_ILP {
 	}
 
 	private void modelMTZ() throws IloException {
+		// (1) edge variables
+		x = cplex.boolVarArray(2 * m);
 
+		// (2) objective function
+		IloLinearIntExpr obj = cplex.linearIntExpr();
+		for (int e = 0; e < m; e++) {
+			int weight = this.instance.getEdge(e).getWeight();
+			if (weight != 0) {
+				obj.addTerm(x[e], weight);
+				obj.addTerm(x[e + m], weight);
+			}
+		}
+		cplex.addMinimize(obj);
+
+		// u variable, order of a node, 0 <= u <= k
+		IloIntVar[] u = cplex.intVarArray(n, 0, k);
+
+		// node 0 has order 0
+		cplex.addEq(u[0], 0);
+
+		// 1 outgoing edge from node 0
+		IloLinearNumExpr constr1 = cplex.linearNumExpr();
+		for (int e : instance.getIncidentEdges(0)) {
+			if (instance.getEdge(e).getV1() == 0) {
+				constr1.addTerm(1, x[e]);
+			}
+		}
+		cplex.addEq(constr1, 1);
+
+		// k - 1 selected edges
+		IloLinearNumExpr constr2 = cplex.linearNumExpr();
+		for (int e = 0; e < m; e++) {
+			if (instance.getEdge(e).getV1() != 0
+					&& instance.getEdge(e).getV2() != 0) {
+				constr2.addTerm(1, x[e]);
+				constr2.addTerm(1, x[e + m]);
+			}
+		}
+		cplex.addEq(k - 1, constr2);
+
+		// sum of all u is k*(k+1)/2
+		IloLinearNumExpr constr3 = cplex.linearNumExpr();
+		for (int i = 0; i < n; i++) {
+			constr3.addTerm(1, u[i]);
+		}
+		cplex.addEq(k * (k + 1) / 2, constr3);
+
+		// node selected
+		IloIntVar[] node = cplex.boolVarArray(n);
+
+		// sum of selected nodes is k
+		cplex.addEq(k, cplex.sum(node));
+		
+		// only give order to node if it is selected
+		for(int i = 0; i < n; i++) {
+			cplex.addLe(u[i], cplex.prod(k, node[i]));
+		}
+
+		// each node at most one incoming edge
+		for (int j = 1; j < n; j++) {
+			IloLinearNumExpr constr4 = cplex.linearNumExpr();
+			for (int e : instance.getIncidentEdges(j)) {
+				if (instance.getEdge(e).getV2() == j) {
+					constr4.addTerm(1, x[e]);
+				} else {
+					constr4.addTerm(1, x[e + m]);
+				}
+			}
+			cplex.addLe(constr4, 1);
+		}
+
+		// if an edge is selected, then both nodes have to have an order
+		for (int e = 0; e < m; e++) {
+			if (instance.getEdge(e).getV1() != 0) {
+				cplex.addLe(x[e], u[instance.getEdge(e).getV1()]);
+				cplex.addLe(x[e + m], u[instance.getEdge(e).getV1()]);
+			}
+			if (instance.getEdge(e).getV2() != 0) {
+				cplex.addLe(x[e], u[instance.getEdge(e).getV2()]);
+				cplex.addLe(x[e + m], u[instance.getEdge(e).getV2()]);
+			}
+		}
+		
+		// order of nodes, 
+		for(int e = 0; e < m; e++) {
+			IloLinearNumExpr constr4 = cplex.linearNumExpr();
+			constr4.addTerm(1, u[instance.getEdge(e).getV1()]);
+			constr4.addTerm(1, x[e]);
+
+			IloLinearNumExpr constr5 = cplex.linearNumExpr(k);
+			IloIntExpr constr6 = cplex.prod(k, x[e]);
+			
+			constr6.addTerm(1, u[instance.getEdge(e).getV2()]);
+			
+			cplex.addLe(constr4, constr6);
+		}
 	}
 }
