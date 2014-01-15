@@ -1,7 +1,130 @@
 \section{Single commodity flows (SCF)}
 
 \subsection{problem description}
+SCF (Single commodity flow) uses outgoing flow from an artificial node. Those nodes receiving any flow larger than zero are part of the k-MST solution
 
-\subsection{algorithm formulation}
+\subsection{our approach}
+We are introducing a decision variable $x_{ij} \forall x_{ij} \in \{0,1\}$ which determines if the edge $(i,j)$ is part of the k-MST solution.
+
+\begin{equation}
+  min \sum_{(i,j) \in E, \ i,j \not =  0} w_{ij} * x_{ij} 
+\end{equation}
 
 \subsection{variables and constraints}
+
+The artificial node $0$ sends out exactly $k$ commodities.
+\begin{equation}
+  \sum_{(0,j) \in E} f_{0j} = k 
+\end{equation}
+
+A k-MST with $k$ nodes needs $k-1$ edges.
+\begin{equation}
+  \sum_{(i,j) \in E, \ i,j \not =  0} x_{ij} = k-1 
+\end{equation}
+
+The variable $f_{ij}$ holds the flow on the edge $(i,j)$. 
+The following equation ensures that each node within the k-MST
+receives one commodity and forwards the rest of the commodities. 
+All other nodes do not receive a commodity.
+\begin{equation}
+  \sum_{u, (v,u) \in E} f_{vu} - \sum_{u, (u,v) \in E} f_{uv} = \min (1, \sum_{u, (v,u) \in E} f_{vu}) \qquad  \forall v \not = 0, v \ \in N 
+\end{equation}
+
+If we have a flow on the edge $(i,j)$, then this edge has to be
+in the solution of the k-MST.
+\begin{equation}
+  f_{ij} \leq k * x_{ij} \qquad \forall (i,j) \in E 
+\end{equation}
+
+We ensure that only one edge from the artificial node to any
+other node is selected.
+\begin{equation}
+  \sum_{(0,j) \in E} x_{0j} = 1 
+\end{equation}
+
+\begin{table} 
+\small
+\centering
+\begin{tabular}{ccccc}
+\hline
+test     & k & objective      & running & branch-and-bound \\
+instance &   & function value & time    & nodes \\
+\hline
+data/g01.dat 	& 1 & 2 & 0.3 & 4 \\
+
+\hline
+\end{tabular}
+\caption{explain captions}
+\label{tbl:scf_slow}
+\end{table}
+
+\subsection{a faster solution}
+
+After strengthening our constraints we were able to obtain the solution much faster than before.\\
+%ende von Nick
+
+If the edge $(i,j)$ is in the solution, then also both end nodes $i$ and $j$ 
+have to be in the solution.
+\begin{equation}
+  x_{ij} \leq y_{i} \qquad \forall (i,j) \in E
+  \label{lbl:xy1}
+\end{equation}
+
+\begin{equation}
+  x_{ij} \leq y_{j} \qquad \forall (i,j) \in E
+  \label{lbl:xy2}
+\end{equation}
+
+\begin{equation}
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E
+ \label{lbl:xy3}
+\end{equation}
+
+Exactly k+1 nodes (with artificial node) must be selected.
+\begin{equation}
+  \sum_{i \in N} y_i = k + 1
+  \label{lbl:yk}
+\end{equation}
+
+\begin{equation}
+  0 \leq f_{ij} \leq k \qquad \forall (i,j) \in E
+\end{equation}
+
+\begin{equation}
+  x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+\end{equation}
+
+\begin{equation}
+  y_i \in \{0,1\} \qquad \forall i \in N
+\end{equation}
+
+
+\begin{table} 
+\small
+\centering
+\begin{tabular}{ccccc}
+\hline
+test     & k & objective      & running & branch-and-bound \\
+instance &   & function value & time    & nodes \\
+\hline
+data/g01.dat		&2	&46	&0.02	&0	\\ 
+data/g01.dat		&5	&477	&0.02	&0	\\ 
+data/g01.dat		&10	&2692	&0.04	&0	\\ 
+data/g02.dat		&4	&373	&0.04	&0	\\ 
+data/g02.dat		&10	&1390	&0.34	&49	\\ 
+data/g02.dat		&20	&5565	&0.28	&53	\\ 
+data/g03.dat		&10	&725	&0.29	&0	\\ 
+data/g03.dat		&25	&3074	&0.72	&0	\\ 
+data/g03.dat		&50	&11400	&0.72	&34	\\ 
+data/g04.dat		&14	&909	&0.64	&63	\\ 
+data/g04.dat		&35	&3292	&6.11	&1228	\\ 
+data/g05.dat		&20	&1235	&10.78	&2474	\\ 
+data/g05.dat		&50	&4898	&12.62	&1189	\\ 
+data/g06.dat		&40	&2068	&1025.64	&28212	\\ 
+data/g06.dat		&100	&6705	&155.06	&4608	\\
+
+\hline
+\end{tabular}
+\caption{explain captions}
+\label{tbl:scf_fast}
+\end{table}

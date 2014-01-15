@@ -1,9 +1,73 @@
 \section{Miller Tucker Zemlin (MTZ)}
-
-Miller
-
 \subsection{problem description}
+MTZ (Miller Tucker Zemlin) uses sequential node ordering (instead of an artificial node). 
 
-\subsection{algorithm formulation}
+\subsection{our approach}
+We are introducing a variable $u_i$ which determines the order of the nodes in the k-MST solution.\\
+
+\begin{equation}
+  min \sum_{(i,j) \in E , \ i,j \not = 0} {w_{ij} * x_{ij}}
+\end{equation}
+
 
 \subsection{variables and constraints}
+
+As we already explained above the following constraint with the variable
+$u_i$ determines the order between the nodes and ensures that we do
+not get a cycle.
+\begin{equation}
+  u_{i} + x_{ij} \leq u_{j} + k*(1- x_{ij}) \qquad \forall (i,j) \in E 
+\end{equation}
+Since we want only $k$ nodes in the solution, all $u_i$'s have to be
+at most $k$.
+\begin{equation}
+  0 \leq u_i \leq k \qquad \forall i \in N \backslash (0) 
+\end{equation}
+The artifical node has the order $0$ and it has exactly one outgoing edge.
+\begin{equation}
+  u_0 = 0 
+\end{equation}
+\begin{equation}
+  \sum_{(0,j) \in E} x_{0j} = 1 
+\end{equation}
+The solution must have exactly $k-1$ edges.
+\begin{equation}
+  \sum_{(i,j) \in E, \ i,j \not =  0} x_{ij} = k-1 
+\end{equation}
+To further tighten the constraints, we restrict the sum of the orders
+from the nodes in the solution.
+\begin{equation}
+  \sum_{i \in N} u_i = \frac{k*(k+1)}{2} 
+\end{equation}
+Furthermore, we also know that we need exactly $k$ nodes with an
+order $u_i > 0$ in the solution.
+\begin{equation}
+  u_i \leq k*y_i \qquad \forall i \in N
+\end{equation}
+\begin{equation}
+  \sum_{i \in N} y_i = k
+\end{equation}
+Since we have arcs in our formulation, we know that each node 
+has at most one incoming arc in the solution. 
+\begin{equation}
+  \sum_{i \in N} {x_{ij}} \leq 1 \qquad \forall j \in N \backslash (0)
+\end{equation}
+Whenever any arc is chosen, the connected nodes must have an order.
+\begin{equation}
+  x_{ij} \leq u_i \qquad \forall (i,j) \in E, i \neq 0
+\end{equation}
+\begin{equation}
+  x_{ij} \leq u_j \qquad \forall (i,j) \in E, j \neq 0
+\end{equation}
+If the node $i$ and the edge $(i,j)$ is in the solution, then also the node $j$ has to be in the solution.
+\begin{equation}
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E, i \neq 0, j \neq 0
+ \label{lbl:mtzxy3}
+\end{equation}
+
+\begin{equation}
+x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+\end{equation}
+\begin{equation}
+  y_i \in \{0,1\} \qquad \forall i \in N
+\end{equation}
