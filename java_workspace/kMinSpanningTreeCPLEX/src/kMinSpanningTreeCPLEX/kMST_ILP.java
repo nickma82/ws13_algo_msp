@@ -287,16 +287,27 @@ public class kMST_ILP {
 		
 		// order of nodes, 
 		for(int e = 0; e < m; e++) {
+			// forward edge
 			IloLinearNumExpr constr4 = cplex.linearNumExpr();
 			constr4.addTerm(1, u[instance.getEdge(e).getV1()]);
 			constr4.addTerm(1, x[e]);
+			constr4.addTerm(-1, u[instance.getEdge(e).getV2()]);
 
-			IloLinearNumExpr constr5 = cplex.linearNumExpr(k);
-			IloIntExpr constr6 = cplex.prod(k, x[e]);
+			IloLinearNumExpr constr5 = cplex.linearNumExpr(1);
+			constr5.addTerm(-1, x[e]);
 			
+			cplex.addLe(constr4, cplex.prod(k, constr5));
+
+			// back edge
+			IloLinearNumExpr constr6 = cplex.linearNumExpr();
 			constr6.addTerm(1, u[instance.getEdge(e).getV2()]);
+			constr6.addTerm(1, x[e + m]);
+			constr6.addTerm(-1, u[instance.getEdge(e).getV1()]);
+
+			IloLinearNumExpr constr7 = cplex.linearNumExpr(1);
+			constr7.addTerm(-1, x[e + m]);
 			
-			cplex.addLe(constr4, constr6);
+			cplex.addLe(constr6, cplex.prod(k, constr7));
 		}
 	}
 }
