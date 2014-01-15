@@ -3,7 +3,8 @@
 \documentclass{article}
 
 \title{Programming Exercise}
-\author{Sebastian Neumaier, 0925308}
+\author{Sebastian Neumaier, 0925308 \\* Stefan Belk, 0925308}
+
 \date{\today}
 
 \begin{document}
@@ -20,21 +21,58 @@ Formulate the k-MST problem as (mixed) integer linear programs (MILPs), based on
 \end{itemize}
 \section{Solution}
 
-\subsection{Miller-Tucker-Zemlin subtour \label{mtz}}
-
-
-\subsection{single commodity flows \label{scf}}
-Objective function:
+\subsection{MTZ: Miller-Tucker-Zemlin \label{mtz}}
+In the Miller-Tucker-Zemlin formulation an addtional variable $u_i$ is introduced to rank the selected nodes. The objective function is to minimize the costs $c_{ij}$ for each selected edge $x_{ij}$.
 \begin{equation}
 min \sum_{(i,j) \in E} c_{ij} x_{ij}
 \end{equation}
-
-Constraints:\\
+The rank of a node ranges between 0 and k. Therefore we need a constraint on the variable $u_i$.
+\begin{equation}
+\forall i \in N : 0 \le u_i \le k
+\end{equation}
+To prevent cycles we need a constraint on $u_i$ and $x_{ij}$. It ensures that no edge can be selected that is incident to two already selected nodes.
+\begin{equation}
+\forall (i,j) \in E : u_i + x_{ij} \le u_j + k * ( 1 - x_{ij})
+\end{equation}
+For simpler inplementation in our Java code we reformulated the equation above to:
+\begin{equation}
+\forall (i,j) \in E : u_i + x_{ij} - u_j \le k * ( 1 - x_{ij})
+\end{equation}
+The next contraint ensures that the root node is not part of the solution.
+\begin{equation}
+u_0 = 0
+\end{equation}
+As the weight (or costs) of each edge from the artificial root node 0 has value 0, we have to make sure that only one edge from the root node is selected.
+\begin{equation}
+\sum_{(0,j) \in E} x_{0j} = 0
+\end{equation}
+\subsection{SCF: Single Commodity Flows \label{scf}}
+The objective function stays the same like in the Miller-Tucker-Zemlin formulation:
+\begin{equation}
+min \sum_{(i,j) \in E} c_{ij} x_{ij}
+\end{equation}
+Flow from 0 to j is k
+\begin{equation}
+\sum_{(0,j) \in E} f_{0j} = k
+\end{equation}
+Flow from i to 0 is 0
+\begin{equation}
+\sum_{(i,0) \in E} f_{i0} = 0
+\end{equation}
 $k-1$ selected edges
 \begin{equation}
 \sum_{(i,j) \in E} x_{ij} = k - 1
 \end{equation}
+Flow of the incoming edges - flow of the outgoing edges = 1. For node x: 
+\begin{equation}
+\sum_{(i,x) \in E} f_{ix} - \sum_{(x,j) \in E} f_{xj} = 1
+\end{equation}
 
-\subsection{multi commodity flows \label{mcf}}
 
+
+\subsection{MCF: Multi Commodity Flows \label{mcf}}
+Again the objective function is the same as in the previous formulations.
+\begin{equation}
+min \sum_{(i,j) \in E} c_{ij} x_{ij}
+\end{equation}
 \end{document}
