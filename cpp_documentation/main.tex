@@ -1,0 +1,45 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+
+\usepackage{latexsym}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage[nice]{nicefrac}
+\usepackage{graphics}
+\usepackage{array}
+\usepackage{fullpage}
+\usepackage{verbatim} 
+\usepackage{color}
+\usepackage{natbib}
+
+\title{Algorithmics WS2013 Programming exercise}
+\author{Lukas Petermann \quad Nick Mayerhofer}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\begin{abstract}
+\textbf{Given} an 
+\begin{itemize}
+  \item undirected graph: $G=(V,E,w)$ with
+  \item nonnegative weighting function $ w : E \rightarrow \mathbb{R}_0^+$
+  \item and an integer $k \leq |V|$
+\end{itemize}
+
+\textbf{Goal}
+Find a minimum weight tree, spanning exactly k nodes using the cplex framework
+\end{abstract}
+
+\include{scf}
+\include{mcf}
+\include{mtz}
+
+\include{results}
+
+\end{document}
