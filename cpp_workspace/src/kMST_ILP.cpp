@@ -15,6 +15,19 @@ std::string kMST_Solution::getResultStream() {
 	return outt.str();
 }
 
+std::string kMST_Solution::getCompareableResultStream() {
+	std::ostringstream outt;
+
+	outt << this->testInstance << "\t\t& ";
+	outt << this->k << "\t& ";
+	outt << this->objectiveValue << "\t& ";
+	outt << this->cpuTime << "\t& ";
+	outt << this->branchAndBoundNodes << "\t";
+	outt << "\\\\ \n";
+
+	return outt.str();
+}
+
 kMST_ILP::kMST_ILP( Instance& _instance, string _model_type, int _k ) :
 	instance( _instance ), model_type( _model_type ), k( _k )
 {
@@ -75,7 +88,7 @@ kMST_Solution kMST_ILP::solve()
 		solution.cpuTime = Tools::CPUtime();
 
 		std::cout << solution.getResultStream();
-		this->outputFile << solution.getResultStream();
+		this->outputFile << solution.getCompareableResultStream();
 
 		return solution;
 	}
@@ -267,8 +280,9 @@ void kMST_ILP::modelMCF()
 
 void kMST_ILP::modelMTZ() {
 	std::ostringstream varName;
-	
+
 	// 42 Initialization of x (array of used edges in the solution)
+	// x .. used for the edges
 	IloBoolVarArray x(env, 2 * this->m_edges);
 	for (size_t edge = 0; edge < 2 * this->m_edges; ++edge) {
 		varName.str(""); varName.clear();
@@ -277,7 +291,7 @@ void kMST_ILP::modelMTZ() {
 	}
 
 	// Initialization of u (array of used nodes in the solution)
-	IloIntVarArray u(env, n);
+	IloIntVarArray u(env, this->n);
 	for (size_t node = 0; node < this->n; ++node) {
 		varName.str(""); varName.clear();
 		varName << "u_" << node;
@@ -285,6 +299,7 @@ void kMST_ILP::modelMTZ() {
 	}
 
 	// 43 Initialization of y (support array to include only k nodes)
+	// Sum of y == k with y El. {0,1}
 	IloBoolVarArray y(env, this->n);
 	for (size_t node = 0; node < this->n; ++node) {
 		varName.str(""); varName.clear();
@@ -301,6 +316,7 @@ void kMST_ILP::modelMTZ() {
 	model.add(IloMinimize(env, expr));
 	expr.end();
 
+	/* adding constraints */
 	// 31 u[v] has to be between 0 and k
 	for (size_t v = 1; v < n; ++v) {
 		IloNumExpr Expr2( this->env );

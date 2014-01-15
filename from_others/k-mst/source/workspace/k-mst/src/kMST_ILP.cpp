@@ -290,7 +290,7 @@ void kMST_ILP::modelMCF()
 	model.add(IloMinimize(env, expr));
 	expr.end();
 
-  // Initialization of f
+  // Initialization of f ... size: |V| * |E|
   IloNumVarArray f(env, 2*m*(n-1));
   for(u_int l=0; l < n-1; l++)
   {

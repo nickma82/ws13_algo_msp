@@ -18,6 +18,7 @@ public:
 	 * get the solution as ostringstream
 	 */
 	std::string getResultStream();
+	std::string getCompareableResultStream();
 
 	// inputs
 	std::string testInstance;
@@ -28,6 +29,7 @@ public:
 	double cpuTime;
 	double objectiveValue;
 	unsigned int branchAndBoundNodes;
+
 };
 
 class kMST_ILP {
