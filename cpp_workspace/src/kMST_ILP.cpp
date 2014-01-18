@@ -114,18 +114,18 @@ void kMST_ILP::setCPLEXParameters()
 }
 
 void kMST_ILP::modelSCF(bool makeFasterResults) {
-	/* Initialize the used edges */
+	// Initialize the decision variables
+	// 0... edge not selected, 1... edge selected
 	IloBoolVarArray x( this->env, this->m_edges * 2 );
 	std::ostringstream varName;
-
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
 		varName.str(""); varName.clear();
 		varName << "edge_" <<  edgeNum;
 		x[edgeNum] = IloBoolVar( this->env, varName.str().c_str() );
 	}
 
-	// 1 Create the objective function
-	// n-1 because edges beginning from 0 are ignored
+	// Create the objective function
+	// n-1 because the first n edges from node 0 to every other nodes are ignored
 	IloExpr expression( this->env );
 	for( size_t edgeNum = this->n-1; edgeNum < this->m_edges; ++edgeNum) {
 		int edgeWeight = this->instance.edges[edgeNum].weight;
@@ -136,7 +136,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	this->model.add( IloMinimize(this->env, expression) );
 	expression.end();
 
-	// 11 Initialization of flow variable
+	// Initialization of flow variable
 	IloIntVarArray flow( this->env, this->m_edges * 2 );
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
 		varName.str(""); varName.clear();
