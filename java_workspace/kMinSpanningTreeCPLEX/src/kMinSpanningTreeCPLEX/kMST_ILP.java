@@ -92,7 +92,9 @@ public class kMST_ILP {
 			System.out.println("CPLEX status: " + cplex.getStatus());
 			System.out.println("Branch-and-Bound nodes: " + cplex.getNnodes());
 			System.out.println("Objective value: " + cplex.getObjValue());
-			System.out.println("CPU time: " + Tools.CPUtime());
+			float time = Tools.CPUtime();
+			System.out.println("CPU time: " + time);
+			System.out.println("In seconds: " + Tools.nanosecondsToSeconds(time));
 			System.out.println();
 
 		} catch (IloException e) {
@@ -195,6 +197,11 @@ public class kMST_ILP {
 		}
 		cplex.addEq(1, constr5);
 		cplex.addEq(0, constr6);
+		
+		// (10) select only back or forward edge, but not both
+		for(int e = 0; e < m; e++) {
+			cplex.addLe(cplex.sum(x[e], x[e + m]), 1);
+		}
 	}
 
 	private void modelMCF() throws IloException {
