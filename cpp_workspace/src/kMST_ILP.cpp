@@ -145,21 +145,21 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	}
 
 	// flow from j to "0" is k
-	IloNumExpr Expr2( this->env ), Expr3( this->env );
+	IloNumExpr NumExpr1 = IloNumExpr( this-> env );
+	IloNumExpr NumExpr2 = IloNumExpr( this-> env );
 	for( auto it = instance.incidentEdges[0].begin();
 			it != instance.incidentEdges[0].end(); ++it ) {
 		if( instance.edges[*it].v1 == 0 ) {
 			// outgoing edge
-			Expr2 += flow[ *it ];
-			Expr3 += flow[ (*it)+m ];
+			NumExpr1 += flow[ *it ];
+			NumExpr2 += flow[ (*it) + this->m_edges ];
 		}
 
 	}
-	this->model.add( Expr2 == k );
-	Expr2.end();
-	this->model.add( Expr3 == 0 ); //returning flow forbidden
-	Expr3.end();
-
+	this->model.add( NumExpr1 == k );
+	NumExpr1.end();
+	this->model.add( NumExpr2 == 0 ); //returning flow forbidden
+	NumExpr2.end();
 
 	// 4 check flow (for all nodes != 0)
 	for(size_t node = 1; node < this->n; ++node )
