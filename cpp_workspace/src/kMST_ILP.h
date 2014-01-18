@@ -54,6 +54,9 @@ private:
 	 */
 	void modelSCF(bool makeFasterResults = true);
 
+	/**
+	 * multi commodity flow model
+	 */
 	void modelMCF();
 	/**
 	 * Miller-Tucker-Zemlin model
