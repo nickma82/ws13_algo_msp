@@ -48,6 +48,25 @@ TEST singleCommoditiveFlow_g04(void) {
 	PASS();
 }
 
+TEST multiCommoditiveFlow_g02(void) {
+	Instance instance( "data/g02.dat" );
+	kMST_ILP *ilp;
+	kMST_Solution solution("", 0);
+
+	ilp = new kMST_ILP( instance, "mcf", 4 ); //single commoditive flow
+	solution = ilp->solve();
+    ASSERT_EQ(373, std::floor(0.1 + solution.objectiveValue));
+    ASSERT_EQ("Optimal", solution.cplexStatus);
+    delete ilp;
+
+	ilp = new kMST_ILP( instance, "mcf", 10 );
+	solution = ilp->solve();
+	ASSERT_EQ(1390, std::floor(0.1 + solution.objectiveValue));
+	ASSERT_EQ("Optimal", solution.cplexStatus);
+
+	PASS();
+}
+
 TEST millerTuckerZemlin_g02(void) {
 
 	Instance instance( "data/g02.dat" );
@@ -87,13 +106,14 @@ TEST millerTuckerZemlin_g04(void) {
 SUITE(scf_suite) {
 	RUN_TEST(singleCommoditiveFlow_g02);
 	RUN_TEST(singleCommoditiveFlow_g04);
+	RUN_TEST(multiCommoditiveFlow_g02);
 	RUN_TEST(millerTuckerZemlin_g02);
 	RUN_TEST(millerTuckerZemlin_g04);
 }
 
 void usage()
 {
-	cout << "USAGE:\t<program> -f filename -m model [-k <nodes to connect> -a]\n";
+	cout << "USAGE:\t<program> -f filename -m model [-k <nodes to connect>]\n";
 	cout << "EXAMPLE:\t" << "./kmst -f data/g01.dat -m scf -k 5\n\n";
 	exit( 1 );
 } // usage
