@@ -35,7 +35,7 @@ The node 0 has order 0. This ensures that the root node is not part of the solut
 \begin{equation}
 u_0 = 0
 \end{equation}
-We allow only one outgoing edge from node 0.
+As the weight (or costs) of each edge from the artificial root node 0 has value 0, we allow only one outgoing edge from node 0.
 \begin{equation}
 \sum_{(0,j) \in E} x_{0j} = 1
 \end{equation}
@@ -49,21 +49,32 @@ The sum of all the orders has to be equal to k*(k+1)/2.
 \end{equation}
 And we need the sum of the selected nodes to be equal to k.
 \begin{equation}
-
+\sum_{n \in N} s_n = k
 \end{equation}
-
+A node is only allowed to have an order if it is selected.
+\begin{equation}
+\forall n \in N: u_n \le s_n
+\end{equation}
+Each node should have at most one incoming edge.
+\begin{equation}
+\forall n \in N: \sum_{(i,n) \in E} x_{in} = 1
+\end{equation}
+If an edge is selected, then both nodes have to have an order.
+\begin{equation}
+\forall (i,j) \in E, j \not= 0: x_{ij} \le u_i
+\end{equation}
 To prevent cycles we need a constraint on $u_i$ and $x_{ij}$. It ensures that no edge can be selected that is incident to two already selected nodes.
 \begin{equation}
 \forall (i,j) \in E : u_i + x_{ij} \le u_j + k * ( 1 - x_{ij})
 \end{equation}
 For simpler inplementation in our Java code we reformulated the equation above to:
+\setcounter{equation}{10}
 \begin{equation}
 \forall (i,j) \in E : u_i + x_{ij} - u_j \le k * ( 1 - x_{ij})
 \end{equation}
-
-As the weight (or costs) of each edge from the artificial root node 0 has value 0, we have to make sure that only one edge from the root node is selected.
+If an edge has been selected then its back-edge cannot be selected.
 \begin{equation}
-\sum_{(0,j) \in E} x_{0j} = 0
+\forall (i,j) \in E: x_{ij} + x_{ji} \le 1
 \end{equation}
 
 \subsection{SCF: Single Commodity Flows \label{scf}}
@@ -103,7 +114,10 @@ Only one outgoing edge from node 0 can be selected and no backwards edge.
 \begin{equation}
 \sum_{(j,0) \in E} x_{j0} = 0
 \end{equation}
-
+If an edge has been selected then its back-edge cannot be selected.
+\begin{equation}
+\forall (i,j) \in E: x_{ij} + x_{ji} \le 1
+\end{equation}
 
 \subsection{MCF: Multi Commodity Flows \label{mcf}}
 In the MCF formulation we have a commodity for each node in the solution of the k-MST. Again the objective function is the same as in the previous formulations.
