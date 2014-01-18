@@ -456,5 +456,10 @@ public class kMST_ILP {
 
 			cplex.addLe(constr6, cplex.prod(k, constr7));
 		}
+		
+		// (12) select only back or forward edge, but not both
+		for(int e = 0; e < m; e++) {
+			cplex.addLe(cplex.sum(x[e], x[e + m]), 1);
+		}
 	}
 }
