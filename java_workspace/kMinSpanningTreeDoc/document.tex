@@ -16,8 +16,8 @@
 Formulate the k-MST problem as (mixed) integer linear programs (MILPs), based on
 \begin{itemize}
 \item Miller-Tucker-Zemlin subtour elimination constraints (\ref{mtz})
-\item single commodity flows (\ref{scf})
-\item multi commodity flows (\ref{mcf})
+\item Single commodity flows (\ref{scf})
+\item Multi commodity flows (\ref{mcf})
 \end{itemize}
 \section{Solution}
 
@@ -31,6 +31,27 @@ The rank of a node ranges between 0 and k. Therefore we need a constraint on the
 \begin{equation}
 \forall i \in N : 0 \le u_i \le k
 \end{equation}
+The node 0 has order 0. This ensures that the root node is not part of the solution.
+\begin{equation}
+u_0 = 0
+\end{equation}
+We allow only one outgoing edge from node 0.
+\begin{equation}
+\sum_{(0,j) \in E} x_{0j} = 1
+\end{equation}
+Number of selected edges equals $k-1$.
+\begin{equation}
+\sum_{(i,j) \in E} x_{ij} = k - 1
+\end{equation}
+The sum of all the orders has to be equal to k*(k+1)/2.
+\begin{equation}
+\sum_{n \in N} u_n = k*(k+1)/2
+\end{equation}
+And we need the sum of the selected nodes to be equal to k.
+\begin{equation}
+
+\end{equation}
+
 To prevent cycles we need a constraint on $u_i$ and $x_{ij}$. It ensures that no edge can be selected that is incident to two already selected nodes.
 \begin{equation}
 \forall (i,j) \in E : u_i + x_{ij} \le u_j + k * ( 1 - x_{ij})
@@ -39,10 +60,7 @@ For simpler inplementation in our Java code we reformulated the equation above t
 \begin{equation}
 \forall (i,j) \in E : u_i + x_{ij} - u_j \le k * ( 1 - x_{ij})
 \end{equation}
-The next contraint ensures that the root node is not part of the solution.
-\begin{equation}
-u_0 = 0
-\end{equation}
+
 As the weight (or costs) of each edge from the artificial root node 0 has value 0, we have to make sure that only one edge from the root node is selected.
 \begin{equation}
 \sum_{(0,j) \in E} x_{0j} = 0
@@ -105,25 +123,36 @@ Number of selected edges equals $k-1$.
 \begin{equation}
 \sum_{(i,j) \in E} x_{ij} = k - 1
 \end{equation}
-We restrict the flow of commodity k from i to j to be a value between 0 and 1.
+We restrict the flow of commodity k from i to j to be a real value between 0 and 1.
 \begin{equation}
-\forall (i,j) \in E : 0 \le f_{ij}^{l} \le 1
+\forall (i,j) \in E, \forall n \in N : 0 \le f_{ij}^{n} \le 1
 \end{equation}
 If there is some flow from node i to j the edge (i,j) has to be selected.
 \begin{equation}
-\forall (i,j) \in E : f_{ij}^{l} \le x_{ij}
+\forall (i,j) \in E, \forall n \in N : f_{ij}^{n} \le x_{ij} 
 \end{equation}
 The amount of commodities sent from node 0 to j has to be equal to k.
 \begin{equation}
-\sum_{(0,j) \in E} f_{0j}^{l} = k
+\forall n \in N: \sum_{(0,j) \in E} f_{0j}^{n} = k
 \end{equation}
 No flow is allowed to go back from node i to 0 in any case.
 \begin{equation}
-\sum_{(i,0) \in E} f_{i0}^{l} = 0
+\forall n \in N: \sum_{(i,0) \in E} f_{i0}^{n} = 0
 \end{equation}
 Node 0 can send at most 1 commodity to a node.
 \begin{equation}
-\forall (0,j) \in E : f_{0j}^{l} \le 1
+\forall (0,j) \in E : f_{0j}^{n} = k
 \end{equation}
-
+All nodes together receive k commodities.
+\begin{equation}
+\sum_{n \in N} \sum_{(i,j) \in E} f_{ij}^{n} \le 1
+\end{equation}
+A single node can receive at most 1 commodity.
+\begin{equation}
+\forall n \in N \backslash \{0\} : \sum_{i,(i,j) \in E} f_{ij}^{n} \le 1
+\end{equation}
+The sum of incoming flow has to equal to the sum of outgoing flow.
+\begin{equation}
+\forall j,n \in N \backslash \{0\}, j \not= n : \sum_{i,(i,j) \in E} f_{ij}^{n} = \sum_{i,(j,i) \in E} f_{ji}^{n}
+\end{equation}
 \end{document}
