@@ -145,21 +145,21 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	}
 
 	// flow from j to "0" is k
-	IloNumExpr Expr2( this->env ), Expr3( this->env );
+	IloNumExpr NumExpr1 = IloNumExpr( this-> env );
+	IloNumExpr NumExpr2 = IloNumExpr( this-> env );
 	for( auto it = instance.incidentEdges[0].begin();
 			it != instance.incidentEdges[0].end(); ++it ) {
 		if( instance.edges[*it].v1 == 0 ) {
 			// outgoing edge
-			Expr2 += flow[ *it ];
-			Expr3 += flow[ (*it)+m ];
+			NumExpr1 += flow[ *it ];
+			NumExpr2 += flow[ (*it) + this->m_edges ];
 		}
 
 	}
-	this->model.add( Expr2 == k );
-	Expr2.end();
-	this->model.add( Expr3 == 0 ); //returning flow forbidden
-	Expr3.end();
-
+	this->model.add( NumExpr1 == k );
+	NumExpr1.end();
+	this->model.add( NumExpr2 == 0 ); //returning flow forbidden
+	NumExpr2.end();
 
 	// 4 check flow (for all nodes != 0)
 	for(size_t node = 1; node < this->n; ++node )
@@ -172,13 +172,13 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 			if( instance.edges[*it].v1 == node ) {
 				// outgoing edge
 				Expr3 -= flow[ *it ];
-				Expr3 += flow[ (*it) + m ];
+				Expr3 += flow[ (*it) + this->m_edges ];
 
-				Expr3_right += flow[ (*it) + m ];
+				Expr3_right += flow[ (*it) + this->m_edges ];
 			} else {
 				// incoming edge
 				Expr3 += flow[ *it ];
-				Expr3 -= flow[ (*it) + m ];
+				Expr3 -= flow[ (*it) + this->m_edges ];
 
 				Expr3_right += flow[ *it ];
 			}
@@ -203,7 +203,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	for(size_t e=n-1; e < this->m_edges; ++e )
 	{
 		Expr5 += x[e];
-		Expr5 += x[e+m];
+		Expr5 += x[e + this->m_edges];
 	}
 	this->model.add(Expr5 == k-1);
 	Expr5.end();
@@ -311,7 +311,7 @@ void kMST_ILP::modelMTZ() {
 	IloExpr expr( this->env );
 	for (size_t edge = this->n - 1; edge < this->m_edges; ++edge) {
 		expr += instance.edges[edge].weight * x[edge];
-		expr += instance.edges[edge].weight * x[edge + m];
+		expr += instance.edges[edge].weight * x[edge + this->m_edges];
 	}
 	model.add(IloMinimize(env, expr));
 	expr.end();
@@ -343,7 +343,7 @@ void kMST_ILP::modelMTZ() {
 	IloNumExpr Expr6( this->env );
 	for (size_t e = n - 1; e < this->m_edges; ++e) {
 		Expr6 += x[e];
-		Expr6 += x[e + m];
+		Expr6 += x[e + this->m_edges];
 	}
 	model.add(Expr6 == k - 1);
 	Expr6.end();
@@ -380,7 +380,7 @@ void kMST_ILP::modelMTZ() {
 				IloNumExpr Expr6( this->env );
 				IloNumExpr Expr7( this->env );
 				Expr6 += x[(*it)];
-				Expr7 += x[(*it) + m];
+				Expr7 += x[(*it) + this->m_edges];
 				model.add(Expr6 <= u[instance.edges[*it].v2]);
 				model.add(Expr7 <= u[instance.edges[*it].v2]);
 				Expr6.end();
@@ -397,8 +397,8 @@ void kMST_ILP::modelMTZ() {
 
 				IloNumExpr Expr40( this->env );
 				IloNumExpr Expr41( this->env );
-				Expr40 += x[(*it) + m];
-				Expr41 += x[(*it) + m];
+				Expr40 += x[(*it) + this->m_edges];
+				Expr41 += x[(*it) + this->m_edges];
 				model.add(Expr40 <= u[instance.edges[*it].v1]);
 				model.add(Expr41 <= u[instance.edges[*it].v2]);
 				Expr40.end();
@@ -418,9 +418,9 @@ void kMST_ILP::modelMTZ() {
 
 		IloNumExpr Expr12( this->env );
 		Expr12 += u[instance.edges[edge].v2];
-		Expr12 += x[(edge) + m];
+		Expr12 += x[(edge) + this->m_edges];
 
-		model.add(Expr12 <= u[instance.edges[edge].v1] + k * (1 - x[(edge) + m]));
+		model.add(Expr12 <= u[instance.edges[edge].v1] + k * (1 - x[(edge) + this->m_edges]));
 		Expr12.end();
 	}
 
@@ -429,7 +429,7 @@ void kMST_ILP::modelMTZ() {
 		IloNumExpr Expr50( this->env );
 		Expr50 += y[ instance.edges[edge].v1 ];
 		Expr50 += x[edge];
-		Expr50 += x[edge + m];
+		Expr50 += x[edge + this->m_edges];
 
 		model.add(Expr50 <= y[ instance.edges[edge].v2 ] + 1);
 		Expr50.end();
@@ -437,7 +437,7 @@ void kMST_ILP::modelMTZ() {
 		IloNumExpr Expr51( this->env );
 		Expr51 += y[ instance.edges[edge].v2 ];
 		Expr51 += x[ edge ];
-		Expr51 += x[ edge + m ];
+		Expr51 += x[ edge + this->m_edges ];
 
 		model.add(Expr51 <= y[ instance.edges[edge].v1 ] + 1);
 		Expr51.end();
@@ -454,7 +454,7 @@ void kMST_ILP::modelMTZ() {
 				Expr11 += x[ *it ];
 			} else {
 				// outgoing edge
-				Expr11 += x[ (*it) + m ];
+				Expr11 += x[ (*it) + this->m_edges ];
 			}
 		}
 		model.add( Expr11 <= 1 );
