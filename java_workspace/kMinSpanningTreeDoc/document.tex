@@ -105,25 +105,36 @@ Number of selected edges equals $k-1$.
 \begin{equation}
 \sum_{(i,j) \in E} x_{ij} = k - 1
 \end{equation}
-We restrict the flow of commodity k from i to j to be a value between 0 and 1.
+We restrict the flow of commodity k from i to j to be a real value between 0 and 1.
 \begin{equation}
-\forall (i,j) \in E : 0 \le f_{ij}^{l} \le 1
+\forall (i,j) \in E, \forall n \in N : 0 \le f_{ij}^{n} \le 1
 \end{equation}
 If there is some flow from node i to j the edge (i,j) has to be selected.
 \begin{equation}
-\forall (i,j) \in E : f_{ij}^{l} \le x_{ij}
+\forall (i,j) \in E, \forall n \in N : f_{ij}^{n} \le x_{ij} 
 \end{equation}
 The amount of commodities sent from node 0 to j has to be equal to k.
 \begin{equation}
-\sum_{(0,j) \in E} f_{0j}^{l} = k
+\forall n \in N: \sum_{(0,j) \in E} f_{0j}^{n} = k
 \end{equation}
 No flow is allowed to go back from node i to 0 in any case.
 \begin{equation}
-\sum_{(i,0) \in E} f_{i0}^{l} = 0
+\forall n \in N: \sum_{(i,0) \in E} f_{i0}^{n} = 0
 \end{equation}
 Node 0 can send at most 1 commodity to a node.
 \begin{equation}
-\forall (0,j) \in E : f_{0j}^{l} \le 1
+\forall (0,j) \in E : f_{0j}^{n} = k
 \end{equation}
-
+All nodes together receive k commodities.
+\begin{equation}
+\sum_{n \in N} \sum_{(i,j) \in E} f_{ij}^{n} \le 1
+\end{equation}
+A single node can receive at most 1 commodity.
+\begin{equation}
+\forall n \in N \backslash \{0\} : \sum_{i,(i,j) \in E} f_{ij}^{n} \le 1
+\end{equation}
+The sum of incoming flow has to equal to the sum of outgoing flow.
+\begin{equation}
+\forall j,n \in N \backslash \{0\}, j \not= n : \sum_{i,(i,j) \in E} f_{ij}^{n} = \sum_{i,(j,i) \in E} f_{ji}^{n}
+\end{equation}
 \end{document}
