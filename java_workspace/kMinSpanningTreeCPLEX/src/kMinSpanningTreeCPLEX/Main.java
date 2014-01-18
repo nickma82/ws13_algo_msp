@@ -11,9 +11,9 @@ public class Main {
 
 	public static void main(String[] args) {
 		// default values
-		String file = "data/g04.dat";
-		String model_type = "scf";
-		int k = 35;
+		String file = "data/g07.dat";
+		String model_type = "mtz";
+		int k = 60;
 
 		// create Options object
 		Options options = new Options();
