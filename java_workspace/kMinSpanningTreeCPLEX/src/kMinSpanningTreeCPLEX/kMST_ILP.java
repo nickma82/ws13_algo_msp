@@ -111,10 +111,10 @@ public class kMST_ILP {
 	}
 
 	private void modelSCF() throws IloException {
-		// (1) edge variables
+		// edge variables
 		x = cplex.boolVarArray(2 * m);
 
-		// (2) objective function
+		// (1) objective function
 		IloLinearIntExpr obj = cplex.linearIntExpr();
 		for (int e = 0; e < m; e++) {
 			int weight = this.instance.getEdge(e).getWeight();
@@ -123,14 +123,14 @@ public class kMST_ILP {
 		}
 		cplex.addMinimize(obj);
 
-		// (3) flow variable
+		// (2) flow variable
 		String[] names = new String[2 * m];
 		for (int i = 0; i < 2 * m; i++) {
 			names[i] = "f_" + i;
 		}
 		f = cplex.intVarArray(2 * m, 0, k, names);
 
-		// (4) flow from 0 to j is k
+		// (3) flow from 0 to j is k
 		IloLinearNumExpr constr1 = cplex.linearNumExpr();
 		for (int e : instance.getIncidentEdges(0)) {
 			if (instance.getEdge(e).getV1() == 0) {
@@ -139,7 +139,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(k, constr1);
 
-		// (5) flow from j to 0 is 0
+		// (4) flow from j to node 0 is 0
 		IloLinearNumExpr constr2 = cplex.linearNumExpr();
 		for (int e : instance.getIncidentEdges(0)) {
 			if (instance.getEdge(e).getV1() == 0) {
@@ -148,7 +148,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(0, constr2);
 
-		// (6) k - 1 selected edges
+		// (5) k - 1 selected edges
 		IloLinearNumExpr constr2_5 = cplex.linearNumExpr();
 		for (int e = 0; e < m; e++) {
 			if (instance.getEdge(e).getV1() != 0
@@ -159,7 +159,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(k - 1, constr2_5);
 
-		// (7) v != 0, flow reduced by one on every visited node
+		// (6) v != 0, flow reduced by one on every visited node
 		for (int v = 1; v < n; v++) {
 			IloLinearNumExpr constr3 = cplex.linearNumExpr();
 			IloLinearNumExpr constr4 = cplex.linearNumExpr();
@@ -178,12 +178,12 @@ public class kMST_ILP {
 			cplex.addEq(constr3, cplex.min(1, constr4));
 		}
 
-		// (8) no flow on a not selected edge
+		// (7) no flow on a not selected edge
 		for (int e = 0; e < 2 * m; e++) {
 			cplex.addLe(f[e], cplex.prod(k, x[e]));
 		}
 
-		// (9) if node is 0, then only one edge is selected
+		// (8), (9) if node is 0, then only one edge is selected
 		// no backward edge to 0 is selected
 		IloLinearNumExpr constr5 = cplex.linearNumExpr();
 		IloLinearNumExpr constr6 = cplex.linearNumExpr();
@@ -198,10 +198,10 @@ public class kMST_ILP {
 	}
 
 	private void modelMCF() throws IloException {
-		// (1) edge variables
+		// edge variables
 		x = cplex.boolVarArray(2 * m);
 
-		// (2) objective function
+		// (1) objective function
 		IloLinearIntExpr obj = cplex.linearIntExpr();
 		for (int e = 0; e < m; e++) {
 			int weight = this.instance.getEdge(e).getWeight();
@@ -212,7 +212,7 @@ public class kMST_ILP {
 		}
 		cplex.addMinimize(obj);
 
-		// 1 outgoing edge from node 0
+		// (2) 1 outgoing edge from node 0
 		IloLinearNumExpr constr1 = cplex.linearNumExpr();
 		for (int e : instance.getIncidentEdges(0)) {
 			if (instance.getEdge(e).getV1() == 0) {
@@ -221,7 +221,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(constr1, 1);
 		
-		// no edge to node 0 selected
+		// (3) no edge to node 0 selected
 		IloLinearNumExpr constr1_5 = cplex.linearNumExpr();
 		for (int e : instance.getIncidentEdges(0)) {
 			if (instance.getEdge(e).getV1() == 0) {
@@ -232,7 +232,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(constr1_5, 0);
 
-		// k - 1 selected edges
+		// (4) k - 1 selected edges
 		IloLinearNumExpr constr2 = cplex.linearNumExpr();
 		for (int e = 0; e < m; e++) {
 			if (instance.getEdge(e).getV1() != 0
@@ -243,20 +243,20 @@ public class kMST_ILP {
 		}
 		cplex.addEq(k - 1, constr2);
 
-		// multi commodity flow variables
+		// (5) multi commodity flow variables
 		g = new IloNumVar[n - 1][];
 		for (int c = 0; c < n - 1; c++) {
 			g[c] = cplex.numVarArray(2 * m, 0, 1);
 		}
 
-		// set edge selected if some flow is on it
+		// (6) set edge selected if some flow is on it
 		for (IloNumVar[] c : g) {
 			for (int e = 0; e < 2 * m; e++) {
 				cplex.addLe(c[e], x[e]);
 			}
 		}
 
-		// k commodities are sent from node 0
+		// (7) k commodities are sent from node 0
 		IloLinearNumExpr constr3 = cplex.linearNumExpr();
 		for (IloNumVar[] i : g) {
 			for (int e : instance.getIncidentEdges(0)) {
@@ -267,7 +267,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(k, constr3);
 
-		// flow from j to node 0 is 0 is any case
+		// (8) flow from j to node 0 is 0 is any case
 		for (IloNumVar[] c : g) {
 			IloLinearNumExpr constr4 = cplex.linearNumExpr();
 			for (int e : instance.getIncidentEdges(0)) {
@@ -278,7 +278,7 @@ public class kMST_ILP {
 			cplex.addEq(0, constr4);
 		}
 
-		// node 0 can send at most 1 commodity to a node
+		// (9) node 0 can send at most 1 commodity to a node
 		for (IloNumVar[] c : g) {
 			IloLinearNumExpr constr5 = cplex.linearNumExpr();
 			for (int e : instance.getIncidentEdges(0)) {
@@ -289,7 +289,7 @@ public class kMST_ILP {
 			cplex.addLe(constr5, 1);
 		}
 
-		// all nodes together receive k commodities
+		// (10) all nodes together receive k commodities
 		IloLinearNumExpr constr6 = cplex.linearNumExpr();
 		for (int c = 1; c < n; c++) {
 			for (int e : instance.getIncidentEdges(c)) {
@@ -302,7 +302,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(k, constr6);
 
-		// a node can receive at most 1 commodity
+		// (11) a node can receive at most 1 commodity
 		for (int c = 1; c < n; c++) {
 			IloLinearNumExpr constr7 = cplex.linearNumExpr();
 			for (int e : instance.getIncidentEdges(c)) {
@@ -315,7 +315,7 @@ public class kMST_ILP {
 			cplex.addLe(constr7, 1);
 		}
 
-		// sum of inflow equals sum of outflow
+		// (12) sum of inflow equals sum of outflow
 		// for any node, except a node is the target of a commodity (c == j)
 		for (int c = 1; c < n; c++) {
 			for (int j = 1; j < n; j++) {
@@ -342,10 +342,10 @@ public class kMST_ILP {
 	}
 
 	private void modelMTZ() throws IloException {
-		// (1) edge variables
+		// edge variables
 		x = cplex.boolVarArray(2 * m);
 
-		// (2) objective function
+		// (1) objective function
 		IloLinearIntExpr obj = cplex.linearIntExpr();
 		for (int e = 0; e < m; e++) {
 			int weight = this.instance.getEdge(e).getWeight();
@@ -356,13 +356,13 @@ public class kMST_ILP {
 		}
 		cplex.addMinimize(obj);
 
-		// u variable, order of a node, 0 <= u <= k
+		// (2) u variable, order of a node, 0 <= u <= k
 		IloIntVar[] u = cplex.intVarArray(n, 0, k);
 
 		// node 0 has order 0
 		cplex.addEq(u[0], 0);
 
-		// 1 outgoing edge from node 0
+		// (3) 1 outgoing edge from node 0
 		IloLinearNumExpr constr1 = cplex.linearNumExpr();
 		for (int e : instance.getIncidentEdges(0)) {
 			if (instance.getEdge(e).getV1() == 0) {
@@ -371,7 +371,7 @@ public class kMST_ILP {
 		}
 		cplex.addEq(constr1, 1);
 
-		// k - 1 selected edges
+		// (4) k - 1 selected edges
 		IloLinearNumExpr constr2 = cplex.linearNumExpr();
 		for (int e = 0; e < m; e++) {
 			if (instance.getEdge(e).getV1() != 0
@@ -382,25 +382,25 @@ public class kMST_ILP {
 		}
 		cplex.addEq(k - 1, constr2);
 
-		// sum of all u is k*(k+1)/2
+		// (5) sum of all u is k*(k+1)/2
 		IloLinearNumExpr constr3 = cplex.linearNumExpr();
 		for (int i = 0; i < n; i++) {
 			constr3.addTerm(1, u[i]);
 		}
 		cplex.addEq(k * (k + 1) / 2, constr3);
 
-		// node selected
+		// (6) node selected
 		IloIntVar[] node = cplex.boolVarArray(n);
 
 		// sum of selected nodes is k
 		cplex.addEq(k, cplex.sum(node));
 
-		// only give order to node if it is selected
+		// (7) only give order to node if it is selected
 		for (int i = 0; i < n; i++) {
 			cplex.addLe(u[i], cplex.prod(k, node[i]));
 		}
 
-		// each node at most one incoming edge
+		// (8) each node at most one incoming edge
 		for (int j = 1; j < n; j++) {
 			IloLinearNumExpr constr4 = cplex.linearNumExpr();
 			for (int e : instance.getIncidentEdges(j)) {
@@ -413,7 +413,7 @@ public class kMST_ILP {
 			cplex.addLe(constr4, 1);
 		}
 
-		// if an edge is selected, then both nodes have to have an order
+		// (9) if an edge is selected, then both nodes have to have an order
 		for (int e = 0; e < m; e++) {
 			if (instance.getEdge(e).getV1() != 0) {
 				cplex.addLe(x[e], u[instance.getEdge(e).getV1()]);
@@ -425,7 +425,7 @@ public class kMST_ILP {
 			}
 		}
 
-		// order of nodes,
+		// (10) order of nodes,
 		for (int e = 0; e < m; e++) {
 			// forward edge
 			IloLinearNumExpr constr4 = cplex.linearNumExpr();
