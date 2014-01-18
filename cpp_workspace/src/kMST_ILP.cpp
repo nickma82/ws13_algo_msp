@@ -114,40 +114,38 @@ void kMST_ILP::setCPLEXParameters()
 }
 
 void kMST_ILP::modelSCF(bool makeFasterResults) {
+	// Initialize the decision variables
+	// 0... edge not selected, 1... edge selected
 	IloNumExpr NumExpr1, NumExpr2;
 
-	/* Initialize the used edges */
-	IloBoolVarArray x( this->env, this->m_edges * 2 );
+    IloBoolVarArray x( this->env, this->m_edges * 2 );
 
 	/* give them a name */
-	std::ostringstream edgeName;
+	std::ostringstream varName;
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
-		edgeName.str(""); edgeName.clear();
-		edgeName << "edge_" <<  edgeNum;
-
-		x[edgeNum] = IloBoolVar( this->env, edgeName.str().c_str() );
+		varName.str(""); varName.clear();
+		varName << "edge_" <<  edgeNum;
+		x[edgeNum] = IloBoolVar( this->env, varName.str().c_str() );
 	}
 
-	// 1 Create the objective function
-	// n-1 because edges beginning from 0 are ignored
+	// Create the objective function
+	// n-1 because the first n edges from node 0 to every other nodes are ignored
 	IloExpr expression( this->env );
-	for( size_t edgeNum = 0; edgeNum < this->m_edges; ++edgeNum ) {
+	for( size_t edgeNum = this->n-1; edgeNum < this->m_edges; ++edgeNum) {
 		int edgeWeight = this->instance.edges[edgeNum].weight;
 
-		/* add both directions */
 		expression += edgeWeight * x[edgeNum];
 		expression += edgeWeight * x[edgeNum + this->m];
 	}
 	this->model.add( IloMinimize(this->env, expression) );
 	expression.end();
 
-	// 11 Initialization of flow variable
+	// Initialization of flow variable
 	IloIntVarArray flow( this->env, this->m_edges * 2 );
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
-		edgeName.str(""); edgeName.clear();
-		edgeName << "flow_" <<  edgeNum ;
-
-		flow[edgeNum] = IloIntVar( this->env, 0, this->k, edgeName.str().c_str() );
+		varName.str(""); varName.clear();
+		varName << "flow_" <<  edgeNum;
+		flow[edgeNum] = IloIntVar( this->env, 0, this->k, varName.str().c_str() );
 	}
 
 	// flow from j to "0" is k
@@ -228,13 +226,13 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 		// for a k+1 node inclusion
 		IloBoolVarArray y( this->env, this->m_edges * 2 );
 		for( size_t nodeNum = 0; nodeNum < this->m_edges *2; ++nodeNum ) {
-			edgeName.str(""); edgeName.clear();
-			edgeName << "y_" <<  nodeNum ;
-			y[nodeNum] = IloBoolVar( this->env, edgeName.str().c_str() );
+			varName.str(""); varName.clear();
+			varName << "y_" <<  nodeNum;
+			y[nodeNum] = IloBoolVar( this->env, varName.str().c_str() );
 		}
 
 		 // 7,8 if an edge x_ij is selected -> y_i and y_j must be 1
-		for( size_t edgeNum = 0; edgeNum < this->m_edges * 2; ++edgeNum )
+		for( size_t edgeNum = 0; edgeNum < this->m_edges * 2; ++edgeNum)
 		{
 			IloNumExpr Expr40( this->env ), Expr41( this->env );
 			Expr40 += x[edgeNum];
