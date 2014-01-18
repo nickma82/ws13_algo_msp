@@ -22,7 +22,8 @@ Formulate the k-MST problem as (mixed) integer linear programs (MILPs), based on
 \section{Solution}
 
 \subsection{MTZ: Miller-Tucker-Zemlin \label{mtz}}
-In the Miller-Tucker-Zemlin formulation an addtional variable $u_i$ is introduced to rank the selected nodes. The objective function is to minimize the costs $c_{ij}$ for each selected edge $x_{ij}$.
+In the Miller-Tucker-Zemlin formulation a variable $u_i$ is introduced to rank the selected nodes. The objective function is to minimize the costs $c_{ij}$ for each selected edge $x_{ij}$.
+\setcounter{equation}{0}
 \begin{equation}
 min \sum_{(i,j) \in E} c_{ij} x_{ij}
 \end{equation}
@@ -46,33 +47,83 @@ As the weight (or costs) of each edge from the artificial root node 0 has value 
 \begin{equation}
 \sum_{(0,j) \in E} x_{0j} = 0
 \end{equation}
+
 \subsection{SCF: Single Commodity Flows \label{scf}}
-The objective function stays the same like in the Miller-Tucker-Zemlin formulation:
+The objective function stays the same like in the Miller-Tucker-Zemlin formulation.
+\setcounter{equation}{0}
 \begin{equation}
 min \sum_{(i,j) \in E} c_{ij} x_{ij}
 \end{equation}
-Flow from 0 to j is k
+Flow has to be between 0 and k.
+\begin{equation}
+\forall (i,j) \in E : 0 \le f_{ij} \le k 
+\end{equation}
+Flow from node 0 to j is k.
 \begin{equation}
 \sum_{(0,j) \in E} f_{0j} = k
 \end{equation}
-Flow from i to 0 is 0
+Flow from node j to 0 is 0.
 \begin{equation}
-\sum_{(i,0) \in E} f_{i0} = 0
+\sum_{(j,0) \in E} f_{j0} = 0
 \end{equation}
-$k-1$ selected edges
+Number of selected edges equals $k-1$.
 \begin{equation}
 \sum_{(i,j) \in E} x_{ij} = k - 1
 \end{equation}
-Flow of the incoming edges - flow of the outgoing edges = 1. For node x: 
+If a node has been selected the outgoing flow has to be equal to the sum of the incoming flows minus 1. 
 \begin{equation}
-\sum_{(i,x) \in E} f_{ix} - \sum_{(x,j) \in E} f_{xj} = 1
+\sum_{(i,x) \in E} f_{ix} - \sum_{(x,j) \in E} f_{xj} = min(1, \sum_{(i,x) \in E} f_{ix})
 \end{equation}
-
+Flow has to be 0 on edges that are not selected.
+\begin{equation}
+\forall (i,j) \in E : f_{ij} \le k*x_{ij}
+\end{equation}
+Only one outgoing edge from node 0 can be selected and no backwards edge.
+\begin{equation}
+\sum_{(0,j) \in E} x_{0j} = 1
+\end{equation}
+\begin{equation}
+\sum_{(j,0) \in E} x_{j0} = 0
+\end{equation}
 
 
 \subsection{MCF: Multi Commodity Flows \label{mcf}}
-Again the objective function is the same as in the previous formulations.
+In the MCF formulation we have a commodity for each node in the solution of the k-MST. Again the objective function is the same as in the previous formulations.
+\setcounter{equation}{0}
 \begin{equation}
 min \sum_{(i,j) \in E} c_{ij} x_{ij}
 \end{equation}
+We allow only one outgoing edge from node 0.
+\begin{equation}
+\sum_{(i,j) \in E} x_{ij} = 1
+\end{equation}
+No edge from node j to 0 is selected.
+\begin{equation}
+\sum_{(j,0) \in E} x_{j0} = 0
+\end{equation}
+Number of selected edges equals $k-1$.
+\begin{equation}
+\sum_{(i,j) \in E} x_{ij} = k - 1
+\end{equation}
+We restrict the flow of commodity k from i to j to be a value between 0 and 1.
+\begin{equation}
+\forall (i,j) \in E : 0 \le f_{ij}^{l} \le 1
+\end{equation}
+If there is some flow from node i to j the edge (i,j) has to be selected.
+\begin{equation}
+\forall (i,j) \in E : f_{ij}^{l} \le x_{ij}
+\end{equation}
+The amount of commodities sent from node 0 to j has to be equal to k.
+\begin{equation}
+\sum_{(0,j) \in E} f_{0j}^{l} = k
+\end{equation}
+No flow is allowed to go back from node i to 0 in any case.
+\begin{equation}
+\sum_{(i,0) \in E} f_{i0}^{l} = 0
+\end{equation}
+Node 0 can send at most 1 commodity to a node.
+\begin{equation}
+\forall (0,j) \in E : f_{0j}^{l} \le 1
+\end{equation}
+
 \end{document}
