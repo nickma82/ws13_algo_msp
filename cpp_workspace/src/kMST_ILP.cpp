@@ -110,22 +110,26 @@ void kMST_ILP::setCPLEXParameters()
 	cplex.setParam( IloCplex::MIPInterval, 1 );
 	cplex.setParam( IloCplex::MIPDisplay, 2 );
 	// only use a single thread
-	cplex.setParam( IloCplex::Threads, 8 );
+	cplex.setParam( IloCplex::Threads, 4 );
 }
 
 void kMST_ILP::modelSCF(bool makeFasterResults) {
-	/* Initialize the used edges */
-	IloBoolVarArray x( this->env, this->m_edges * 2 );
-	std::ostringstream varName;
+	// Initialize the decision variables
+	// 0... edge not selected, 1... edge selected
+	IloNumExpr NumExpr1, NumExpr2;
 
+    IloBoolVarArray x( this->env, this->m_edges * 2 );
+
+	/* give them a name */
+	std::ostringstream varName;
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
 		varName.str(""); varName.clear();
 		varName << "edge_" <<  edgeNum;
 		x[edgeNum] = IloBoolVar( this->env, varName.str().c_str() );
 	}
 
-	// 1 Create the objective function
-	// n-1 because edges beginning from 0 are ignored
+	// Create the objective function
+	// n-1 because the first n edges from node 0 to every other nodes are ignored
 	IloExpr expression( this->env );
 	for( size_t edgeNum = this->n-1; edgeNum < this->m_edges; ++edgeNum) {
 		int edgeWeight = this->instance.edges[edgeNum].weight;
@@ -136,7 +140,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	this->model.add( IloMinimize(this->env, expression) );
 	expression.end();
 
-	// 11 Initialization of flow variable
+	// Initialization of flow variable
 	IloIntVarArray flow( this->env, this->m_edges * 2 );
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
 		varName.str(""); varName.clear();
@@ -145,8 +149,8 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	}
 
 	// flow from j to "0" is k
-	IloNumExpr NumExpr1 = IloNumExpr( this-> env );
-	IloNumExpr NumExpr2 = IloNumExpr( this-> env );
+	NumExpr1 = IloNumExpr( this-> env );
+	NumExpr2 = IloNumExpr( this-> env );
 	for( auto it = instance.incidentEdges[0].begin();
 			it != instance.incidentEdges[0].end(); ++it ) {
 		if( instance.edges[*it].v1 == 0 ) {
@@ -200,7 +204,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 
 	// 3 @todo description
 	IloNumExpr Expr5( this->env );
-	for(size_t e=n-1; e < this->m_edges; ++e )
+	for(size_t e = n-1; e < this->m_edges; ++e )
 	{
 		Expr5 += x[e];
 		Expr5 += x[e + this->m_edges];
@@ -271,11 +275,225 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	} //end makeFasterResults
 }
 
-void kMST_ILP::modelMCF()
-{
-	// ++++++++++++++++++++++++++++++++++++++++++
-	// TODO build multi commodity flow model
-	// ++++++++++++++++++++++++++++++++++++++++++
+void kMST_ILP::modelMCF() {
+	// (27) // Initialization of used edges
+	IloBoolVarArray x( this->env, 2 * this->m_edges );
+	std::ostringstream varName;
+	for (size_t edgeNum = 0; edgeNum < 2 * this->m_edges ; ++edgeNum ) {
+		varName.str(""); varName.clear();
+		varName << "edge_" <<  edgeNum;
+
+		x[edgeNum] = IloBoolVar( this->env, varName.str().c_str());
+	}
+
+	// (14) // objective function
+	IloExpr expr( this->env);
+	for (size_t e = n - 1; e < this->m_edges ; ++e ) {
+		expr += instance.edges[e].weight * x[e];
+		expr += instance.edges[e].weight * x[e + m];
+	}
+	model.add(IloMinimize( this->env, expr));
+	expr.end();
+
+	// Initialization of f ... size: |V| * |E|
+	IloNumVarArray f( this->env, 2 * this->m_edges * (n - 1));
+	for (size_t l = 0; l < n - 1; ++l ) {
+		for (size_t e = 0; e < 2 * this->m_edges ; ++e ) {
+			varName.str(""); varName.clear();
+			varName << "f_" << e << "_" << l;
+			f[(2 * this->m_edges * l) + e] = IloNumVar( this->env, 0, 1, varName.str().c_str());
+		}
+	}
+
+	// (28) // Initialization of y (support array to include k+1 nodes (with artificial node))
+	IloBoolVarArray y( this->env, this->n);
+	for (size_t node = 0; node < this->n; ++node) {
+		varName.str(""); varName.clear();
+		varName << "y_" << node;
+
+		y[node] = IloBoolVar( this->env, varName.str().c_str() );
+	}
+
+	// (22) (23) // if an edge x_ij is selected -> y_i and y_j must be 1
+	for (size_t edge = 0; edge < this->m_edges * 2 ; ++edge ) {
+		IloNumExpr ExprNode1Selected( this->env);
+		ExprNode1Selected += x[edge];
+		model.add(ExprNode1Selected <= y[instance.edges.at(edge % this->m_edges ).v1]);
+		ExprNode1Selected.end();
+
+		IloNumExpr ExprNode2Selected( this->env);
+		ExprNode2Selected += x[edge];
+		model.add(ExprNode2Selected <= y[instance.edges.at(edge % this->m_edges ).v2]);
+		ExprNode2Selected.end();
+	}
+
+	// (25) // exactly k+1 different nodes allowed (with artificial node)
+	IloNumExpr Expr34( this->env);
+	for (size_t v = 0; v < n; ++v ) {
+		Expr34 += y[v];
+	}
+	model.add(Expr34 == k + 1);
+	Expr34.end();
+
+	// (24) //
+	for (size_t e = 0; e < this->m_edges ; ++e ) {
+		IloNumExpr Expr50( this->env);
+		Expr50 += y[instance.edges[e].v1];
+		Expr50 += x[e];
+		Expr50 += x[e + m];
+
+		model.add(Expr50 <= y[instance.edges[e].v2] + 1);
+		Expr50.end();
+
+		IloNumExpr Expr51( this->env);
+		Expr51 += y[instance.edges[e].v2];
+		Expr51 += x[e];
+		Expr51 += x[e + m];
+
+		model.add(Expr51 <= y[instance.edges[e].v1] + 1);
+		Expr51.end();
+	}
+
+	// (20) //
+	for (size_t l = 0; l < n - 1; ++l ) {
+		IloNumExpr Expr_left( this->env);
+		for (auto it = instance.incidentEdges[0].begin();
+				it != instance.incidentEdges[0].end(); ++it ) {
+			if (instance.edges.at(*it).v1 == 0) {	// outgoing edge
+				Expr_left += f[(2 * this->m_edges * l) + (*it)];
+				Expr_left -= f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
+			}
+		}
+
+		IloNumExpr Expr_right( this->env);
+		for (auto it = instance.incidentEdges.at(l + 1).begin();
+				it != instance.incidentEdges.at(l + 1).end(); ++it ) {
+			if (instance.edges.at(*it).v2 == l + 1) {	// incoming edge normal
+				Expr_right += f[(2 * this->m_edges * l) + (*it)];
+			} else {	// incoming artificial edge
+				Expr_right += f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
+			}
+		}
+
+		model.add(Expr_left == Expr_right);
+		Expr_left.end();
+		Expr_right.end();
+	}
+
+	// (15) //
+	for (size_t l = 0; l < n - 1; ++l ) {
+		IloNumExpr Expr2( this->env);
+		for (auto it = instance.incidentEdges[0].begin();
+				it != instance.incidentEdges[0].end(); ++it ) {
+			if (instance.edges.at(*it).v1 == 0) {	// outgoing edge
+				Expr2 += f[(2 * this->m_edges * l) + (*it)];
+				Expr2 -= f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
+			}
+		}
+		model.add(Expr2 <= 1);
+		Expr2.end();
+	}
+
+	// (16) //
+	IloNumExpr Expr3( this->env);
+	for (size_t l = 0; l < n - 1; ++l ) {
+		for (auto it = instance.incidentEdges[0].begin();
+				it != instance.incidentEdges[0].end(); ++it ) {
+			if (instance.edges.at(*it).v1 == 0) {	// outgoing edge
+				Expr3 += f[(2 * this->m_edges * l) + (*it)];
+				Expr3 -= f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
+			}
+		}
+	}
+	model.add( Expr3 == k );
+	Expr3.end();
+
+	// (17) //
+	for (size_t l = 0; l < n - 1; ++l ) {
+		IloNumExpr Expr4( this->env);
+		for (auto it = instance.incidentEdges.at(l + 1).begin();
+				it != instance.incidentEdges.at(l + 1).end(); ++it ) {
+			if (instance.edges.at(*it).v2 == l + 1) {	// incoming edge normal
+				Expr4 += f[(2 * this->m_edges * l) + (*it)];
+			} else {	// incoming artificial edge
+				Expr4 += f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
+			}
+		}
+		model.add(Expr4 <= 1);
+		Expr4.end();
+	}
+
+	// (18) //
+	IloNumExpr Expr5( this->env);
+	for (size_t l = 0; l < n - 1; ++l ) {
+		for (auto it = instance.incidentEdges.at(l + 1).begin();
+				it != instance.incidentEdges.at(l + 1).end(); ++it ) {
+			if (instance.edges.at(*it).v2 == l + 1) {	// incoming edge normal
+				Expr5 += f[(2 * this->m_edges * l) + (*it)];
+			} else {	// incoming artificial edge
+				Expr5 += f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
+			}
+		}
+	}
+	model.add(Expr5 == k);
+	Expr5.end();
+
+	// (19) //
+	for (size_t l = 0; l < n - 1; ++l ) {
+		for (size_t j = 1; j < n; ++j ) {
+			if (j == l + 1)
+				continue;
+
+			IloNumExpr Expr6( this->env);
+
+			for (auto it = instance.incidentEdges[j].begin();
+					it != instance.incidentEdges[j].end(); ++it ) {
+				if (instance.edges.at(*it).v2 == j) {
+
+					Expr6 += f[(2 * this->m_edges * l) + (*it)];
+					Expr6 -= f[(2 * this->m_edges * l) + (*it + this->m_edges )];
+
+				} else if ((instance.edges.at(*it).v1 == j)) {
+
+					Expr6 -= f[(2 * this->m_edges * l) + (*it)];
+					Expr6 += f[(2 * this->m_edges * l) + (*it + this->m_edges )];
+
+				}
+			}
+
+			model.add(Expr6 == 0);
+			Expr6.end();
+		}
+	}
+
+	// (26) // force x[e] to be set if flow exist
+	for (size_t l = 0; l < n - 1; ++l ) {
+		for (size_t e = 0; e < 2 * this->m_edges ; ++e ) {
+			IloNumExpr Expr7( this->env);
+			Expr7 += f[(2 * l * this->m_edges ) + e];
+			model.add(Expr7 <= x[e]);
+			Expr7.end();
+		}
+	}
+
+	//
+	IloNumExpr Expr8( this->env);
+	for (size_t e = n - 1; e < this->m_edges ; ++e ) {
+		Expr8 += x[e];
+		Expr8 += x[e + m];
+	}
+	model.add(Expr8 == k - 1);
+	Expr8.end();
+
+	// (21) //
+	IloIntExpr Expr9( this->env);
+	for (size_t e = 0; e < n - 1; ++e ) {
+		Expr9 += x[e];
+	}
+	model.add(Expr9 == 1);
+	Expr9.end();
+
+
 }
 
 void kMST_ILP::modelMTZ() {
@@ -283,7 +501,7 @@ void kMST_ILP::modelMTZ() {
 
 	// 42 Initialization of x (array of used edges in the solution)
 	// x .. used for the edges
-	IloBoolVarArray x(env, 2 * this->m_edges);
+	IloBoolVarArray x( this->env, 2 * this->m_edges);
 	for (size_t edge = 0; edge < 2 * this->m_edges; ++edge) {
 		varName.str(""); varName.clear();
 		varName << "x_" << edge;
@@ -291,7 +509,7 @@ void kMST_ILP::modelMTZ() {
 	}
 
 	// Initialization of u (array of used nodes in the solution)
-	IloIntVarArray u(env, this->n);
+	IloIntVarArray u( this->env, this->n);
 	for (size_t node = 0; node < this->n; ++node) {
 		varName.str(""); varName.clear();
 		varName << "u_" << node;
@@ -300,11 +518,11 @@ void kMST_ILP::modelMTZ() {
 
 	// 43 Initialization of y (support array to include only k nodes)
 	// Sum of y == k with y El. {0,1}
-	IloBoolVarArray y(env, this->n);
+	IloBoolVarArray y( this->env, this->n);
 	for (size_t node = 0; node < this->n; ++node) {
 		varName.str(""); varName.clear();
 		varName << "y_" << node;
-		y[node] = IloBoolVar(env, varName.str().c_str() );
+		y[node] = IloBoolVar( this->env, varName.str().c_str() );
 	}
 
 	// 29 objective function
@@ -313,7 +531,7 @@ void kMST_ILP::modelMTZ() {
 		expr += instance.edges[edge].weight * x[edge];
 		expr += instance.edges[edge].weight * x[edge + this->m_edges];
 	}
-	model.add(IloMinimize(env, expr));
+	model.add(IloMinimize( this->env, expr));
 	expr.end();
 
 	/* adding constraints */

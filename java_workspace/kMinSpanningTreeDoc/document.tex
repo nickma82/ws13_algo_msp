@@ -16,9 +16,10 @@
 Formulate the k-MST problem as (mixed) integer linear programs (MILPs), based on
 \begin{itemize}
 \item Miller-Tucker-Zemlin subtour elimination constraints (\ref{mtz})
-\item Single commodity flows (\ref{scf})
-\item Multi commodity flows (\ref{mcf})
+\item Single Commodity Flows (\ref{scf})
+\item Multi Commodity Flows (\ref{mcf})
 \end{itemize}
+An undirected graph G = (V,E,w) with a non-negative weight function w was given. We have to find a minimum weight spanning tree with exactly k nodes. The following formulations have been solved with the ILOG CPLEX solver.
 \section{Solution}
 
 \subsection{MTZ: Miller-Tucker-Zemlin \label{mtz}}
@@ -171,5 +172,8 @@ The sum of incoming flow has to equal to the sum of outgoing flow.
 \end{equation}
 
 \input{results.tex}
+
+\section{Conclusion}
+In our implementation MTZ proved to be the best method. It performed far better then SCF and MCF. Aditionally SCF performed better then MCF in most instances.
 
 \end{document}
