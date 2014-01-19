@@ -273,7 +273,9 @@ void kMST_ILP::modelSCF() {
 }
 
 void kMST_ILP::modelMCF() {
-	// (27) // Initialization of used edges
+	// (16) Initialize the decision variable
+	//      We double the amount of edges to create a directed graph.
+	//      0... edge not selected, 1... edge selected
 	IloBoolVarArray x( this->env, 2 * this->m_edges );
 	std::ostringstream varName;
 	for (size_t edgeNum = 0; edgeNum < 2 * this->m_edges ; ++edgeNum ) {
@@ -283,7 +285,8 @@ void kMST_ILP::modelMCF() {
 		x[edgeNum] = IloBoolVar( this->env, varName.str().c_str());
 	}
 
-	// (14) // objective function
+	// (15) Create the objective function
+	//      Starting by n-1 because the first n edges from node 0 to every other nodes and vice versa are ignored
 	IloExpr expr( this->env);
 	for (size_t e = n - 1; e < this->m_edges ; ++e ) {
 		expr += instance.edges[e].weight * x[e];
@@ -292,7 +295,19 @@ void kMST_ILP::modelMCF() {
 	model.add(IloMinimize( this->env, expr));
 	expr.end();
 
-	// Initialization of f ... size: |V| * |E|
+	// (17) Initialize the new variable y
+	//      0... node not selected, 1... node selected
+	IloBoolVarArray y( this->env, this->n);
+	for (size_t node = 0; node < this->n; ++node) {
+		varName.str(""); varName.clear();
+		varName << "y_" << node;
+
+		y[node] = IloBoolVar( this->env, varName.str().c_str() );
+	}
+
+	// (18) Initialization of the flow variable
+	//      There are |V| * |E| different flows
+	//      0 <= f_{i,j}^n <= 1
 	IloNumVarArray f( this->env, 2 * this->m_edges * (n - 1));
 	for (size_t l = 0; l < n - 1; ++l ) {
 		for (size_t e = 0; e < 2 * this->m_edges ; ++e ) {
@@ -302,56 +317,7 @@ void kMST_ILP::modelMCF() {
 		}
 	}
 
-	// (28) // Initialization of y (support array to include k+1 nodes (with artificial node))
-	IloBoolVarArray y( this->env, this->n);
-	for (size_t node = 0; node < this->n; ++node) {
-		varName.str(""); varName.clear();
-		varName << "y_" << node;
-
-		y[node] = IloBoolVar( this->env, varName.str().c_str() );
-	}
-
-	// (22) (23) // if an edge x_ij is selected -> y_i and y_j must be 1
-	for (size_t edge = 0; edge < this->m_edges * 2 ; ++edge ) {
-		IloNumExpr ExprNode1Selected( this->env);
-		ExprNode1Selected += x[edge];
-		model.add(ExprNode1Selected <= y[instance.edges.at(edge % this->m_edges ).v1]);
-		ExprNode1Selected.end();
-
-		IloNumExpr ExprNode2Selected( this->env);
-		ExprNode2Selected += x[edge];
-		model.add(ExprNode2Selected <= y[instance.edges.at(edge % this->m_edges ).v2]);
-		ExprNode2Selected.end();
-	}
-
-	// (25) // exactly k+1 different nodes allowed (with artificial node)
-	IloNumExpr Expr34( this->env);
-	for (size_t v = 0; v < n; ++v ) {
-		Expr34 += y[v];
-	}
-	model.add(Expr34 == k + 1);
-	Expr34.end();
-
-	// (24) //
-	for (size_t e = 0; e < this->m_edges ; ++e ) {
-		IloNumExpr Expr50( this->env);
-		Expr50 += y[instance.edges[e].v1];
-		Expr50 += x[e];
-		Expr50 += x[e + m];
-
-		model.add(Expr50 <= y[instance.edges[e].v2] + 1);
-		Expr50.end();
-
-		IloNumExpr Expr51( this->env);
-		Expr51 += y[instance.edges[e].v2];
-		Expr51 += x[e];
-		Expr51 += x[e + m];
-
-		model.add(Expr51 <= y[instance.edges[e].v1] + 1);
-		Expr51.end();
-	}
-
-	// (20) //
+	// (20) TODO
 	for (size_t l = 0; l < n - 1; ++l ) {
 		IloNumExpr Expr_left( this->env);
 		for (auto it = instance.incidentEdges[0].begin();
@@ -377,7 +343,7 @@ void kMST_ILP::modelMCF() {
 		Expr_right.end();
 	}
 
-	// (15) //
+	// (19) The artificial node '0' sends out TODO
 	for (size_t l = 0; l < n - 1; ++l ) {
 		IloNumExpr Expr2( this->env);
 		for (auto it = instance.incidentEdges[0].begin();
@@ -391,7 +357,7 @@ void kMST_ILP::modelMCF() {
 		Expr2.end();
 	}
 
-	// (16) //
+	// (20) The artificial node '0' sends out exactly k flows to k other nodes
 	IloNumExpr Expr3( this->env);
 	for (size_t l = 0; l < n - 1; ++l ) {
 		for (auto it = instance.incidentEdges[0].begin();
@@ -405,7 +371,7 @@ void kMST_ILP::modelMCF() {
 	model.add( Expr3 == k );
 	Expr3.end();
 
-	// (17) //
+	// (21) All flows incoming in the target node must have a flow with a value with 0 or 1
 	for (size_t l = 0; l < n - 1; ++l ) {
 		IloNumExpr Expr4( this->env);
 		for (auto it = instance.incidentEdges.at(l + 1).begin();
@@ -420,7 +386,7 @@ void kMST_ILP::modelMCF() {
 		Expr4.end();
 	}
 
-	// (18) //
+	// (22) The sum of all incoming flows on their target node must be k
 	IloNumExpr Expr5( this->env);
 	for (size_t l = 0; l < n - 1; ++l ) {
 		for (auto it = instance.incidentEdges.at(l + 1).begin();
@@ -435,7 +401,8 @@ void kMST_ILP::modelMCF() {
 	model.add(Expr5 == k);
 	Expr5.end();
 
-	// (19) //
+	// (23) The sum of all incoming flows minus the sum of all outgoing flows of each node, where the flow has
+	//      another target, must be 0
 	for (size_t l = 0; l < n - 1; ++l ) {
 		for (size_t j = 1; j < n; ++j ) {
 			if (j == l + 1)
@@ -463,7 +430,7 @@ void kMST_ILP::modelMCF() {
 		}
 	}
 
-	// (26) // force x[e] to be set if flow exist
+	// (24) If a flow in on an edge, then the edge must be selected
 	for (size_t l = 0; l < n - 1; ++l ) {
 		for (size_t e = 0; e < 2 * this->m_edges ; ++e ) {
 			IloNumExpr Expr7( this->env);
@@ -473,7 +440,15 @@ void kMST_ILP::modelMCF() {
 		}
 	}
 
-	//
+	// (25) The artificial node '0' has exactly one outgoing edge selected
+	IloIntExpr Expr9( this->env);
+	for (size_t e = 0; e < n - 1; ++e ) {
+		Expr9 += x[e];
+	}
+	model.add(Expr9 == 1);
+	Expr9.end();
+
+	// (26) The sum of all edges selected (ecluding the artificial node) must be k-1
 	IloNumExpr Expr8( this->env);
 	for (size_t e = n - 1; e < this->m_edges ; ++e ) {
 		Expr8 += x[e];
@@ -482,15 +457,45 @@ void kMST_ILP::modelMCF() {
 	model.add(Expr8 == k - 1);
 	Expr8.end();
 
-	// (21) //
-	IloIntExpr Expr9( this->env);
-	for (size_t e = 0; e < n - 1; ++e ) {
-		Expr9 += x[e];
+	// (27) (28) Ensures that if an edge is selected, both nodes connected by the edge must be selected too
+	for (size_t edge = 0; edge < this->m_edges * 2 ; ++edge ) {
+		IloNumExpr ExprNode1Selected( this->env);
+		ExprNode1Selected += x[edge];
+		model.add(ExprNode1Selected <= y[instance.edges.at(edge % this->m_edges ).v1]);
+		ExprNode1Selected.end();
+
+		IloNumExpr ExprNode2Selected( this->env);
+		ExprNode2Selected += x[edge];
+		model.add(ExprNode2Selected <= y[instance.edges.at(edge % this->m_edges ).v2]);
+		ExprNode2Selected.end();
 	}
-	model.add(Expr9 == 1);
-	Expr9.end();
 
+	// (29) Guarantees that only one edge connecting two nodes can be selected at the same time
+	for (size_t e = 0; e < this->m_edges ; ++e ) {
+		IloNumExpr Expr50( this->env);
+		Expr50 += y[instance.edges[e].v1];
+		Expr50 += x[e];
+		Expr50 += x[e + m];
 
+		model.add(Expr50 <= y[instance.edges[e].v2] + 1);
+		Expr50.end();
+
+		IloNumExpr Expr51( this->env);
+		Expr51 += y[instance.edges[e].v2];
+		Expr51 += x[e];
+		Expr51 += x[e + m];
+
+		model.add(Expr51 <= y[instance.edges[e].v1] + 1);
+		Expr51.end();
+	}
+
+	// (30) We assure that there are exactly k+1 (including the artifical node) nodes selected
+	IloNumExpr Expr34( this->env);
+	for (size_t v = 0; v < n; ++v ) {
+		Expr34 += y[v];
+	}
+	model.add(Expr34 == k + 1);
+	Expr34.end();
 }
 
 void kMST_ILP::modelMTZ() {
