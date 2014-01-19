@@ -38,7 +38,12 @@ The artificial node $0$ sends out a flow of value $k$.
   \sum_{(0,j) \in E} f_{0j} = k 
 \end{equation}
 \\
-We ensure that only one edge from the artificial node to any
+The artificial node $0$ is not allowed to receive any flow.
+\begin{equation}
+  \sum_{(i,0) \in E} f_{i0} = 0 
+\end{equation}
+\\
+We ensure that only one edge from the artificial node to any.
 other node is selected.
 \begin{equation}
   \sum_{(0,j) \in E} x_{0j} = 1 
