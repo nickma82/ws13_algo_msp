@@ -52,7 +52,7 @@ private:
 	/**
 	 * Builds single commodity flow model
 	 */
-	void modelSCF(bool makeFasterResults = true);
+	void modelSCF();
 
 	/**
 	 * multi commodity flow model

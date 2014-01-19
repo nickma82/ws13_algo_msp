@@ -113,7 +113,7 @@ void kMST_ILP::setCPLEXParameters()
 	cplex.setParam( IloCplex::Threads, 4 );
 }
 
-void kMST_ILP::modelSCF(bool makeFasterResults) {
+void kMST_ILP::modelSCF() {
 	// Initialize the decision variables
 	// 0... edge not selected, 1... edge selected
 	IloNumExpr NumExpr1, NumExpr2;
@@ -219,58 +219,57 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	this->model.add(Expr6 == 1);
 	Expr6.end();
 
-	if ( makeFasterResults ) {
-		// 13 Initialization of y which is the support array
-		// for a k+1 node inclusion
-		IloBoolVarArray y( this->env, this->m_edges * 2 );
-		for( size_t nodeNum = 0; nodeNum < this->m_edges *2; ++nodeNum ) {
-			varName.str(""); varName.clear();
-			varName << "y_" <<  nodeNum;
-			y[nodeNum] = IloBoolVar( this->env, varName.str().c_str() );
-		}
+	
+	// 13 Initialization of y which is the support array
+	// for a k+1 node inclusion
+	IloBoolVarArray y( this->env, this->m_edges * 2 );
+	for( size_t nodeNum = 0; nodeNum < this->m_edges *2; ++nodeNum ) {
+		varName.str(""); varName.clear();
+		varName << "y_" <<  nodeNum;
+		y[nodeNum] = IloBoolVar( this->env, varName.str().c_str() );
+	}
 
-		 // 7,8 if an edge x_ij is selected -> y_i and y_j must be 1
-		for( size_t edgeNum = 0; edgeNum < this->m_edges * 2; ++edgeNum)
-		{
-			IloNumExpr Expr40( this->env ), Expr41( this->env );
-			Expr40 += x[edgeNum];
-			this->model.add( Expr40 <= y[instance.edges[ edgeNum % this->m_edges ].v1] );
-			Expr40.end();
+	 // 7,8 if an edge x_ij is selected -> y_i and y_j must be 1
+	for( size_t edgeNum = 0; edgeNum < this->m_edges * 2; ++edgeNum)
+	{
+		IloNumExpr Expr40( this->env ), Expr41( this->env );
+		Expr40 += x[edgeNum];
+		this->model.add( Expr40 <= y[instance.edges[ edgeNum % this->m_edges ].v1] );
+		Expr40.end();
 
-			Expr41 += x[edgeNum];
-			this->model.add( Expr41 <= y[instance.edges[ edgeNum % this->m_edges ].v2] );
-			Expr41.end();
-		}
+		Expr41 += x[edgeNum];
+		this->model.add( Expr41 <= y[instance.edges[ edgeNum % this->m_edges ].v2] );
+		Expr41.end();
+	}
 
-		// 10 exactly k+1 different nodes allowed (with artificial node)
-		IloNumExpr Expr34( this->env );
-		for(size_t v = 0; v < n; ++v )
-		{
-			Expr34 += y[v];
-		}
-		this->model.add(Expr34 == k+1);
-		Expr34.end();
+	// 10 exactly k+1 different nodes allowed (with artificial node)
+	IloNumExpr Expr34( this->env );
+	for(size_t v = 0; v < n; ++v )
+	{
+		Expr34 += y[v];
+	}
+	this->model.add(Expr34 == k+1);
+	Expr34.end();
 
-		// 9 @todo description //
-		for(size_t edge = 0; edge < this->m_edges; ++edge )
-		{
-			IloNumExpr Expr50( this->env );
-			Expr50 += y[ instance.edges[edge].v1 ];
-			Expr50 += x[ edge ];
-			Expr50 += x[ edge + this->m_edges ];
+	// 9 @todo description //
+	for(size_t edge = 0; edge < this->m_edges; ++edge )
+	{
+		IloNumExpr Expr50( this->env );
+		Expr50 += y[ instance.edges[edge].v1 ];
+		Expr50 += x[ edge ];
+		Expr50 += x[ edge + this->m_edges ];
 
-			this->model.add( Expr50 <= y[ instance.edges[edge].v2 ] + 1);
-			Expr50.end();
+		this->model.add( Expr50 <= y[ instance.edges[edge].v2 ] + 1);
+		Expr50.end();
 
-			IloNumExpr Expr51( this->env );
-			Expr51 += y[ instance.edges[edge].v2 ];
-			Expr51 += x[ edge ];
-			Expr51 += x[ edge + this->m_edges ];
+		IloNumExpr Expr51( this->env );
+		Expr51 += y[ instance.edges[edge].v2 ];
+		Expr51 += x[ edge ];
+		Expr51 += x[ edge + this->m_edges ];
 
-			this->model.add( Expr51 <= y[ instance.edges[edge].v1 ] + 1);
-			Expr51.end();
-		}
-	} //end makeFasterResults
+		this->model.add( Expr51 <= y[ instance.edges[edge].v1 ] + 1);
+		Expr51.end();
+	}
 }
 
 void kMST_ILP::modelMCF() {

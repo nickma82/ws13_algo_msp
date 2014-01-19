@@ -6,8 +6,8 @@ DEBUG = 1
 
 CPLEX_VERSION = 12.5
 #CPLEX_DIR = /home/nickma/ILOG/cplex-$(CPLEX_VERSION)
-#CPLEX_DIR = /home/lukas/apps/CPLEX_algo
-CPLEX_DIR = /home/nickma/apps/CPLEX_algo
+CPLEX_DIR = /home/lukas/apps/CPLEX_algo
+#CPLEX_DIR = /home/nickma/apps/CPLEX_algo
 
 SRCDIR = src
 OBJDIR = obj
