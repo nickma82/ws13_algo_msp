@@ -74,7 +74,7 @@ Further the solution must have exactly $k$ nodes selected.
 To strenghten the constraints and to further ensure that no clycles will be in the solution we need to go sure that each node has exactly $1$ or none incoming edges.
 
 \begin{equation}
-  \sum_{i \in V} {x_{ij}} \leq 1 \qquad \forall j \in N \backslash (0)
+  \sum_{i \in V} {x_{in}} \leq 1 \qquad \forall n \in V \backslash (0)
 \end{equation}
 \\
 A node can only have an outgoing edge selected, if the node has a order greater than $0$.

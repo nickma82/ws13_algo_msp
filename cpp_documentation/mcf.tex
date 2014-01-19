@@ -50,7 +50,7 @@ Here we assure that the sum of all flows which are incoming in the destiny node 
 We need go sure, that the sum of all incoming flows on the destination nodes must be equal to the sum of the artificial node which has sent a value of $k$.
 
 \begin{equation}
-  \sum_{n=1}^V \sum_{i, (i,n)}  f_{in}^n= k
+  \sum_{n=1}^V \sum_{i, (i,n) \in E}  f_{in}^n= k
 \end{equation}
 \\
 Each flow which is incoming in an node other then the destination node must be sent further.
