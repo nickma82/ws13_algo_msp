@@ -1,6 +1,97 @@
 \section{Multi commodity flow (MCF)}
-\subsection{problem description}
+\subsection{Our Approach}
+The Multi Commodity Flow sends out $k$ different flows each directed to a specific node which will be in the k-MST solution. Each flow can pass arbitrarily many other flows on it's path.
+\\
+\\
+For this problem we introduce the same deciscion variable $x_{ij} \forall x_{ij} \in \{0,1\}$ and the same objective function as we did for the SCF.\\
+\\
+\begin{equation}
+  min \sum_{(i,j) \in E, \ i,j \not =  0} w_{ij} * x_{ij} 
+\end{equation}
 
-\subsection{algorithm formulation}
+\subsection{Variables and Constraints}
 
-\subsection{variables and constraints}
+The variable $x$ can have the value 0 if the edge is not and 1 if the edge is in the solution. 
+
+\begin{equation}
+  x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+\end{equation}
+\\
+We need another variable $y$ which has the value 0 if a node $i$ is not and 1 if it is in the solution.
+
+\begin{equation}
+  y_i \in \{0,1\} \qquad \forall i \in V
+\end{equation}
+\\
+For the MCF we need, like in the SCF, a flow variable, but we have $l$ different flows where each flow $f_{ij}^l$ has a value beween 0 and 1 and is directed to a specific node $l$.
+
+\begin{equation}
+  0 \leq f_{ij}^l \leq k \qquad \forall (i,j) \in E
+\end{equation}
+\\
+The following equation ensures that the artificial node $0$ send out a flow to each different node l with a value between 0 and 1.
+
+\begin{equation}
+  \sum_{j, j \neq l 0}  f_{0j}^l \leq 1 \qquad \forall l \in V \backslash \{0\}
+\end{equation}
+\\
+This equation garantees that exactly k flows are sent to graph.
+
+\begin{equation}
+  \sum_{l=1}^V \sum_{j, j \neq l 0}  f_{0j}^l = k
+\end{equation}
+\\
+Here we assure that the sum of all flows which are incoming in the destiny node must have a value between 0 and 1.
+
+\begin{equation}
+  \sum_{j}  f_{il}^l \leq 1 \qquad \forall l \in V \backslash \{0\}
+\end{equation}
+\\
+We need go sure, that the sum of all incoming flows on the destination nodes must be euqal to the sum of the artificial node which has sent a value of $k$.
+
+\begin{equation}
+  \sum_{l=1}^V \sum_{i, (i,l)}  f_{il}^l = k
+\end{equation}
+\\
+Each flow which is incoming in an node other then the destination node must be sent further.
+
+\begin{equation}
+  \sum  f_{ij}^l -  \sum  f_{ji}^l = 0
+\end{equation}
+\\
+Further we need to ensure that the artificial node $0$ sends all k different flows over one specific node. Therefore only one edge can be selected.
+
+\begin{equation}
+  \sum  x_{0j} = 1
+\end{equation}
+\\
+To be sure that each solution is truly a minimum spanning tree we need to be sure that there are no cylces. We accomplish that by the following equation that guarantees us that there can only be $k-1$ edges selected.
+
+\begin{equation}
+  \sum  x_{ij} = k-1
+\end{equation}
+\\
+If the edge $(i,j)$ is in the solution, then also both end nodes $i$ and $j$ 
+have to be in the solution.
+\begin{equation}
+  x_{ij} \leq y_{i} \qquad \forall (i,j) \in E
+  \label{lbl:xy1}
+\end{equation}
+
+\begin{equation}
+  x_{ij} \leq y_{j} \qquad \forall (i,j) \in E
+  \label{lbl:xy2}
+\end{equation}
+\\
+The following equation ensures that only one direction of an edge is in the solution.
+
+\begin{equation}
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E
+ \label{lbl:xy3}
+\end{equation}
+\\
+Exactly k+1 nodes, including the artificial node, must be selected.
+\begin{equation}
+  \sum_{i \in N} y_i = k + 1
+  \label{lbl:yk}
+\end{equation}

@@ -24,17 +24,17 @@
 \maketitle
 \tableofcontents
 
-\begin{abstract}
+\newpage
+\section{Task Description}
 \textbf{Given} an 
 \begin{itemize}
   \item undirected graph: $G=(V,E,w)$ with
-  \item nonnegative weighting function $ w : E \rightarrow \mathbb{R}_0^+$
+  \item nonnegative weighting function $ w(e) \in \mathbb{R}_0^+ , \forall e \in E$
   \item and an integer $k \leq |V|$
 \end{itemize}
 
-\textbf{Goal}
+\textbf{Goal:}
 Find a minimum weight tree, spanning exactly k nodes using the cplex framework
-\end{abstract}
 
 \include{scf}
 \include{mcf}
