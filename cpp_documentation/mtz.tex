@@ -1,73 +1,127 @@
 \section{Miller Tucker Zemlin (MTZ)}
-\subsection{problem description}
-MTZ (Miller Tucker Zemlin) uses sequential node ordering (instead of an artificial node). 
 
-\subsection{our approach}
-We are introducing a variable $u_i$ which determines the order of the nodes in the k-MST solution.\\
+\subsection{Our Approach}
+Miller Tucker Zemlin uses sequential node ordering. We use again an artificial node $0$ starting with the order $0$ and increment the order every time we reach a new node by one.\\
+\\ 
+Again we introduce the same deciscion variable $x_{ij} \forall x_{ij} \in \{0,1\}$ and the same objective function as we did for the SCF.\\
 
 \begin{equation}
   min \sum_{(i,j) \in E , \ i,j \not = 0} {w_{ij} * x_{ij}}
 \end{equation}
 
 
-\subsection{variables and constraints}
+\subsection{Variables and Constraints}
+The variable $x$ can have the value 0 if the edge is not and 1 if the edge is in the solution. 
 
-As we already explained above the following constraint with the variable
-$u_i$ determines the order between the nodes and ensures that we do
-not get a cycle.
 \begin{equation}
-  u_{i} + x_{ij} \leq u_{j} + k*(1- x_{ij}) \qquad \forall (i,j) \in E 
+  x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
 \end{equation}
-Since we want only $k$ nodes in the solution, all $u_i$'s have to be
-at most $k$.
+\\
+We need another variable $y$ which has the value 0 if a node $i$ is not and 1 if it is in the solution.
+
 \begin{equation}
-  0 \leq u_i \leq k \qquad \forall i \in N \backslash (0) 
+  y_i \in \{0,1\} \qquad \forall i \in V
 \end{equation}
-The artifical node has the order $0$ and it has exactly one outgoing edge.
+\\
+For MTZ we introduce a new variable $u_i$ which is the order of the every node $i$. It can have a value between 0 and $k$, because the highest order there can be is exactly $k$.
+
+\begin{equation}
+  0 \leq u_i \leq k \qquad \forall i \in V \backslash (0) 
+\end{equation}
+\\
+The artifical node $0$ has the order $0$.
+
 \begin{equation}
   u_0 = 0 
 \end{equation}
+\\
+The artificial node can have only one outgoing edge selected.
+
 \begin{equation}
   \sum_{(0,j) \in E} x_{0j} = 1 
 \end{equation}
-The solution must have exactly $k-1$ edges.
+\\
+This equation ensures that an edge can only exist between a node with a lower order than the targeting node. This guarantees us that there will be no cycles.
+
+\begin{equation}
+  u_{i} + x_{ij} \leq u_{j} + k*(1- x_{ij}) \qquad \forall (i,j) \in E 
+\end{equation}
+\\
+To ensure that no order will be skipped we restict the sum of orders.
+
+\begin{equation}
+  \sum_{i \in V} u_i = \frac{k*(k+1)}{2} 
+\end{equation}
+\\
+We also need to ensure that if a node has a order greater than $0$ then the node has to be selected.
+
+\begin{equation}
+  u_i \leq k*y_i \qquad \forall i \in V
+\end{equation}
+\\
+The k-MST solution must have exactly $k-1$ edges selected.
+
 \begin{equation}
   \sum_{(i,j) \in E, \ i,j \not =  0} x_{ij} = k-1 
 \end{equation}
-To further tighten the constraints, we restrict the sum of the orders
-from the nodes in the solution.
+\\
+Further the solution must have exactly $k$ nodes selected.
+
 \begin{equation}
-  \sum_{i \in N} u_i = \frac{k*(k+1)}{2} 
+  \sum_{i \in V} y_i = k
 \end{equation}
-Furthermore, we also know that we need exactly $k$ nodes with an
-order $u_i > 0$ in the solution.
+\\
+To strenghten the constraints and to further ensure that no clycles will be in the solution we need to go sure that each node has exactly $1$ or none incoming edges.
+
 \begin{equation}
-  u_i \leq k*y_i \qquad \forall i \in N
+  \sum_{i \in V} {x_{in}} \leq 1 \qquad \forall n \in V \backslash (0)
 \end{equation}
-\begin{equation}
-  \sum_{i \in N} y_i = k
-\end{equation}
-Since we have arcs in our formulation, we know that each node 
-has at most one incoming arc in the solution. 
-\begin{equation}
-  \sum_{i \in N} {x_{ij}} \leq 1 \qquad \forall j \in N \backslash (0)
-\end{equation}
-Whenever any arc is chosen, the connected nodes must have an order.
+\\
+A node can only have an outgoing edge selected, if the node has a order greater than $0$.
+
 \begin{equation}
   x_{ij} \leq u_i \qquad \forall (i,j) \in E, i \neq 0
 \end{equation}
+\\
+A node can only have an incoming edge selected, if the node has a order greater than $0$.
+
 \begin{equation}
   x_{ij} \leq u_j \qquad \forall (i,j) \in E, j \neq 0
 \end{equation}
-If the node $i$ and the edge $(i,j)$ is in the solution, then also the node $j$ has to be in the solution.
-\begin{equation}
- y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E, i \neq 0, j \neq 0
- \label{lbl:mtzxy3}
-\end{equation}
+\\
+The following equation ensures that only one direction of an edge is in the solution.
 
 \begin{equation}
-x_{ij} \in \{0,1\} \qquad \forall (i,j) \in E
+ y_{i} + x_{ij} + x_{ji} \leq y_{j} + 1 \qquad \forall (i,j) \in E, i \neq 0, j \neq 0
 \end{equation}
-\begin{equation}
-  y_i \in \{0,1\} \qquad \forall i \in N
-\end{equation}
+\\
+
+\begin{table} 
+\small
+\centering
+\begin{tabular}{ccccc}
+\hline
+test     & k & objective      & running & branch-and-bound \\
+instance &   & function value & time    & nodes \\
+\hline
+data/g01.dat		& 2	& 46	& 0.03	& 0	\\ 
+data/g01.dat		& 5	& 477	& 0.17	& 0	\\ 
+data/g01.dat		& 10	& 2692	& 0.41	& 0	\\ 
+data/g02.dat		& 4	& 373	& 0.72	& 0	\\ 
+data/g02.dat		& 10	& 1390	& 1.14	& 51	\\ 
+data/g02.dat		& 20	& 5565	& 2.34	& 1197	\\ 
+data/g03.dat		& 10	& 725	& 2.83	& 57	\\ 
+data/g03.dat		& 25	& 3074	& 11.91	& 2306	\\ 
+data/g03.dat		& 50	& 11400	& 235.76	& 136934	\\ 
+data/g04.dat		& 14	& 909	& 8.62	& 151	\\ 
+data/g04.dat		& 35	& 3292	& 18.83	& 2417	\\ 
+data/g05.dat		& 20	& 1235	& 12.92	& 369	\\ 
+data/g05.dat		& 50	& 4898	& 56.91	& 6930	\\ 
+data/g06.dat		& 40	& 2068	& 171.72	& 13414	\\ 
+data/g06.dat		& 100	& 6705	& 892.2	& 49561	\\ 
+
+\hline
+\end{tabular}
+\caption{explain captions}
+\label{tbl:scf_fast}
+\end{table}

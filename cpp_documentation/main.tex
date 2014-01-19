@@ -17,24 +17,31 @@
 \usepackage{natbib}
 
 \title{Algorithmics WS2013 Programming exercise}
-\author{Lukas Petermann (07...) \quad Nick Mayerhofer (0726179)}
+\author{Lukas Petermann (0725146) \quad Nick Mayerhofer (0726179)}
 
 \begin{document}
 
 \maketitle
 \tableofcontents
 
-\begin{abstract}
+\newpage
+\section{Task Description}
 \textbf{Given} an 
 \begin{itemize}
   \item undirected graph: $G=(V,E,w)$ with
-  \item nonnegative weighting function $ w : E \rightarrow \mathbb{R}_0^+$
+  \item nonnegative weighting function $ w(e) \in \mathbb{R}_0^+ , \forall e \in E$
   \item and an integer $k \leq |V|$
 \end{itemize}
 
-\textbf{Goal}
-Find a minimum weight tree, spanning exactly k nodes using the cplex framework
-\end{abstract}
+\textbf{Goal:}
+Find a minimum weight tree, spanning exactly k nodes using the cplex framework.\\
+\\
+For this we use three different approaches:
+\begin{itemize}
+  \item Singe Commodity Flow
+  \item Mutli Commodity Flow
+  \item Miller Tucker Zemlin
+\end{itemize}
 
 \include{scf}
 \include{mcf}
