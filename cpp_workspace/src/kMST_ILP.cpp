@@ -117,10 +117,8 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 	// Initialize the decision variables
 	// 0... edge not selected, 1... edge selected
 	IloNumExpr NumExpr1, NumExpr2;
+	IloBoolVarArray x( this->env, this->m_edges * 2 );
 
-    IloBoolVarArray x( this->env, this->m_edges * 2 );
-
-	/* give them a name */
 	std::ostringstream varName;
 	for( size_t edgeNum = 0; edgeNum < this->m_edges *2; ++edgeNum ) {
 		varName.str(""); varName.clear();
@@ -148,7 +146,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 		flow[edgeNum] = IloIntVar( this->env, 0, this->k, varName.str().c_str() );
 	}
 
-	// flow from j to "0" is k
+	// Sum of every flow from j to node '0' must bel k
 	NumExpr1 = IloNumExpr( this-> env );
 	NumExpr2 = IloNumExpr( this-> env );
 	for( auto it = instance.incidentEdges[0].begin();
@@ -202,7 +200,7 @@ void kMST_ILP::modelSCF(bool makeFasterResults) {
 		Expr4.end();
 	}
 
-	// 3 @todo description
+	// sum of all selected edges must be k-1
 	IloNumExpr Expr5( this->env );
 	for(size_t e = n-1; e < this->m_edges; ++e )
 	{
