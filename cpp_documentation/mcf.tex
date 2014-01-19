@@ -23,52 +23,58 @@ We need another variable $y$ which has the value 0 if a node $i$ is not and 1 if
   y_i \in \{0,1\} \qquad \forall i \in V
 \end{equation}
 \\
-For the MCF we need, like in the SCF, a flow variable, but we have $l$ different flows where each flow $f_{ij}^l$ has a value beween 0 and 1 and is directed to a specific node $l$.
+For the MCF we need, like in the SCF, a flow variable, but we have $n$ different flows where each flow $f_{ij}^n$ has a value beween 0 and 1 and is directed to a specific node $n$.
 
 \begin{equation}
-  0 \leq f_{ij}^l \leq k \qquad \forall (i,j) \in E
+  0 \leq f_{ij}^n \leq 1 \qquad \forall (i,j) \in E, \forall n \in V
 \end{equation}
 \\
-The following equation ensures that the artificial node $0$ send out a flow to each different node l with a value between 0 and 1.
+The following equation ensures that the artificial node $0$ sends out a flow to each different node $n$ with a value between 0 and 1.
 
 \begin{equation}
-  \sum_{j, j \neq l 0}  f_{0j}^l \leq 1 \qquad \forall l \in V \backslash \{0\}
+  \sum_{j, j \neq 0}  f_{0j}^n \leq 1 \qquad \forall n \in V \backslash \{0\}
 \end{equation}
 \\
-This equation garantees that exactly k flows are sent to graph.
+This equation guarantees that exactly k flows are sent to graph.
 
 \begin{equation}
-  \sum_{l=1}^V \sum_{j, j \neq l 0}  f_{0j}^l = k
+  \sum_{(0,j) \in E}  f_{0j}^n = k \qquad \forall n \in V
 \end{equation}
 \\
 Here we assure that the sum of all flows which are incoming in the destiny node must have a value between 0 and 1.
 
 \begin{equation}
-  \sum_{j}  f_{il}^l \leq 1 \qquad \forall l \in V \backslash \{0\}
+  \sum_{i, i \neq n}  f_{in}^n \leq 1 \qquad \forall n \in V \backslash \{0\}
 \end{equation}
 \\
-We need go sure, that the sum of all incoming flows on the destination nodes must be euqal to the sum of the artificial node which has sent a value of $k$.
+We need go sure, that the sum of all incoming flows on the destination nodes must be equal to the sum of the artificial node which has sent a value of $k$.
 
 \begin{equation}
-  \sum_{l=1}^V \sum_{i, (i,l)}  f_{il}^l = k
+  \sum_{n=1}^V \sum_{i, (i,n)}  f_{in}^n= k
 \end{equation}
 \\
 Each flow which is incoming in an node other then the destination node must be sent further.
 
 \begin{equation}
-  \sum  f_{ij}^l -  \sum  f_{ji}^l = 0
+  \sum_{i, (i,j) \in E}  f_{ij}^n -  \sum_{i, (j,i) \in E}  f_{ji}^n = 0 \qquad \forall n \in V \backslash \{0\}, \forall j, j \neq n
+\end{equation}
+\\
+We need to go sure, that if a flow greater then 0 is on an edge than the edge must be selected.
+
+\begin{equation}
+  f_{ij}^n \leq x_{ij} \qquad \forall (i,j) \in E, \forall n \in V
 \end{equation}
 \\
 Further we need to ensure that the artificial node $0$ sends all k different flows over one specific node. Therefore only one edge can be selected.
 
 \begin{equation}
-  \sum  x_{0j} = 1
+  \sum_{(0, j) \in E}  x_{0j} = 1
 \end{equation}
 \\
 To be sure that each solution is truly a minimum spanning tree we need to be sure that there are no cylces. We accomplish that by the following equation that guarantees us that there can only be $k-1$ edges selected.
 
 \begin{equation}
-  \sum  x_{ij} = k-1
+  \sum_{(i, j) \in E, i,j \neq 0}  x_{ij} = k-1
 \end{equation}
 \\
 If the edge $(i,j)$ is in the solution, then also both end nodes $i$ and $j$ 
@@ -92,6 +98,34 @@ The following equation ensures that only one direction of an edge is in the solu
 \\
 Exactly k+1 nodes, including the artificial node, must be selected.
 \begin{equation}
-  \sum_{i \in N} y_i = k + 1
+  \sum_{i \in V} y_i = k + 1
   \label{lbl:yk}
 \end{equation}
+
+\begin{table} 
+\small
+\centering
+\begin{tabular}{ccccc}
+\hline
+test     & k & objective      & running & branch-and-bound \\
+instance &   & function value & time    & nodes \\
+\hline
+data/g01.dat		& 2	& 46	& 0.03	& 0	\\ 
+data/g01.dat		& 5	& 477	& 0.04	& 0	\\ 
+data/g01.dat		& 10	& 2692	& 0.02	& 0	\\ 
+data/g04.dat		& 14	& 909	& 96.26	& 19	\\ 
+data/g04.dat		& 35	& 3292	& 108.88	& 0	\\ 
+data/g03.dat		& 10	& 725	& 8.51	& 0	\\ 
+data/g03.dat		& 25	& 3074	& 17.49	& 0	\\ 
+data/g03.dat		& 50	& 11400	& 14.94	& 0	\\ 
+data/g02.dat		& 4	& 373	& 0.41	& 0	\\ 
+data/g02.dat		& 10	& 1390	& 1.54	& 0	\\ 
+data/g02.dat		& 20	& 5565	& 0.26	& 0	\\ 
+data/g05.dat		& 20	& 1235	& 915.74	& 0	\\ 
+data/g05.dat		& 50	& 4898	& 127.52	& 0	\\ 
+data/g06.dat		& 40	& 2068	& 10699.6	& 247	\\ 
+\hline
+\end{tabular}
+\caption{explain captions}
+\label{tbl:scf_fast}
+\end{table}

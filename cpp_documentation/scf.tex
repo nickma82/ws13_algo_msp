@@ -51,7 +51,7 @@ A minimum spanning tree with $k$ nodes must have $k-1$ edges.
 \\
 The following equation states that the sum of all incoming flows minus the sum of all outgoing flows must be 0 or 1. This ensures that each time a node is selected, a commodity is consumed or no flow is incoming or outgoing.
 \begin{equation}
-  \sum_{u, (v,u) \in E} f_{vu} - \sum_{u, (u,v) \in E} f_{uv} = \min (1, \sum_{u, (v,u) \in E} f_{vu}) \qquad  \forall v \not = 0, v \ \in N 
+  \sum_{u, (v,u) \in E} f_{vu} - \sum_{u, (u,v) \in E} f_{uv} = \min (1, \sum_{u, (v,u) \in E} f_{vu}) \qquad  \forall v \not = 0, v \ \in V
 \end{equation}
 \\
 If we have a flow on the edge $(i,j)$, then this edge has to be selected and therefore must be in the solution
@@ -81,7 +81,7 @@ The following equation ensures that only one direction of an edge is in the solu
 \\
 Exactly k+1 nodes, including the artificial node, must be selected.
 \begin{equation}
-  \sum_{i \in N} y_i = k + 1
+  \sum_{i \in V} y_i = k + 1
   \label{lbl:yk}
 \end{equation}
 
