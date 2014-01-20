@@ -68,7 +68,7 @@ The k-MST solution must have exactly $k-1$ edges selected.
 Further the solution must have exactly $k$ nodes selected.
 
 \begin{equation}
-  \sum_{i \in V} y_i = k
+  \sum_{i \in V, i \neq 0} y_i = k
 \end{equation}
 \\
 To strenghten the constraints and to further ensure that no clycles will be in the solution we need to go sure that each node has exactly $1$ or none incoming edges.

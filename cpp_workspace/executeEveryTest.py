@@ -2,7 +2,7 @@
 OUTPUT_FILENAME = "mtz.results"
 INPUT_METHOD = "mtz"
 
-k = {"g01.dat" : [2,5,10], "g02.dat" : [4,10,20], "g03.dat" : [10,25,50], "g04.dat" : [14,35], "g05.dat" : [20,50], "g06.dat" : [40,100]}
+k = {"g01.dat" : [2,5], "g02.dat" : [4,10], "g03.dat" : [10,25], "g04.dat" : [14,35], "g05.dat" : [20,50]} #, "g06.dat" : [40,100]}
 
 import subprocess
 
