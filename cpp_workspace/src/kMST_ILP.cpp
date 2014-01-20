@@ -317,33 +317,7 @@ void kMST_ILP::modelMCF() {
 		}
 	}
 
-	// (20) TODO
-	for (size_t l = 0; l < n - 1; ++l ) {
-		IloNumExpr Expr_left( this->env);
-		for (auto it = instance.incidentEdges[0].begin();
-				it != instance.incidentEdges[0].end(); ++it ) {
-			if (instance.edges.at(*it).v1 == 0) {	// outgoing edge
-				Expr_left += f[(2 * this->m_edges * l) + (*it)];
-				Expr_left -= f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
-			}
-		}
-
-		IloNumExpr Expr_right( this->env);
-		for (auto it = instance.incidentEdges.at(l + 1).begin();
-				it != instance.incidentEdges.at(l + 1).end(); ++it ) {
-			if (instance.edges.at(*it).v2 == l + 1) {	// incoming edge normal
-				Expr_right += f[(2 * this->m_edges * l) + (*it)];
-			} else {	// incoming artificial edge
-				Expr_right += f[(2 * this->m_edges * l) + ((*it) + this->m_edges )];
-			}
-		}
-
-		model.add(Expr_left == Expr_right);
-		Expr_left.end();
-		Expr_right.end();
-	}
-
-	// (19) The artificial node '0' sends out TODO
+	// (19) The artificial node '0' sends out k different flows of value 1 and there the sum of all outgoing flows must be k
 	for (size_t l = 0; l < n - 1; ++l ) {
 		IloNumExpr Expr2( this->env);
 		for (auto it = instance.incidentEdges[0].begin();
