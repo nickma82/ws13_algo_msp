@@ -110,7 +110,7 @@ void kMST_ILP::setCPLEXParameters()
 	cplex.setParam( IloCplex::MIPInterval, 1 );
 	cplex.setParam( IloCplex::MIPDisplay, 2 );
 	// only use a single thread
-	cplex.setParam( IloCplex::Threads, 4 );
+	cplex.setParam( IloCplex::Threads, 1 );
 }
 
 void kMST_ILP::modelSCF() {
@@ -138,6 +138,24 @@ void kMST_ILP::modelSCF() {
 	}
 	this->model.add( IloMinimize(this->env, expression) );
 	expression.end();
+
+	// (42) Every node must have one or none incoming edge to avoid cycles
+	for (size_t node = 1; node < n; ++node) {
+		IloNumExpr Expr11( this->env );
+
+		for ( auto it = instance.incidentEdges[node].begin();
+				it != instance.incidentEdges[node].end(); ++it) {
+			if (instance.edges[*it].v2 == node) {
+				// incoming edge
+				Expr11 += x[ *it ];
+			} else {
+				// outgoing edge
+				Expr11 += x[ (*it) + this->m_edges ];
+			}
+		}
+		model.add( Expr11 <= 1 );
+		Expr11.end();
+	}
 
 	// (3) Initialize the new variable y
 	//     0... node not selected, 1... node selected
@@ -294,6 +312,24 @@ void kMST_ILP::modelMCF() {
 	}
 	model.add(IloMinimize( this->env, expr));
 	expr.end();
+
+	// (42) Every node must have one or none incoming edge to avoid cycles
+	for (size_t node = 1; node < n; ++node) {
+		IloNumExpr Expr11( this->env );
+
+		for ( auto it = instance.incidentEdges[node].begin();
+				it != instance.incidentEdges[node].end(); ++it) {
+			if (instance.edges[*it].v2 == node) {
+				// incoming edge
+				Expr11 += x[ *it ];
+			} else {
+				// outgoing edge
+				Expr11 += x[ (*it) + this->m_edges ];
+			}
+		}
+		model.add( Expr11 <= 1 );
+		Expr11.end();
+	}
 
 	// (17) Initialize the new variable y
 	//      0... node not selected, 1... node selected
