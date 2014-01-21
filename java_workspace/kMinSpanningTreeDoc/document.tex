@@ -42,7 +42,7 @@ As the weight (or costs) of each edge from the artificial root node 0 has value 
 \end{equation}
 Number of selected edges equals $k-1$.
 \begin{equation}
-\sum_{(i,j) \in E} x_{ij} = k - 1
+\sum_{(i,j) \in E, i,j \not= 0} x_{ij} = k - 1
 \end{equation}
 The sum of all the orders has to be equal to k*(k+1)/2.
 \begin{equation}
@@ -62,7 +62,7 @@ Each node should have at most one incoming edge.
 \end{equation}
 If an edge is selected, then both nodes have to have an order.
 \begin{equation}
-\forall (i,j) \in E, j \not= 0: x_{ij} \le u_i
+\forall (i,j) \in E, i,j \not= 0: x_{ij} \le u_i
 \end{equation}
 To prevent cycles we need a constraint on $u_i$ and $x_{ij}$. It ensures that no edge can be selected that is incident to two already selected nodes.
 \begin{equation}
@@ -98,7 +98,7 @@ Flow from node j to 0 is 0.
 \end{equation}
 Number of selected edges equals $k-1$.
 \begin{equation}
-\sum_{(i,j) \in E} x_{ij} = k - 1
+\sum_{(i,j) \in E, i,j \not= 0} x_{ij} = k - 1
 \end{equation}
 If a node has been selected the outgoing flow has to be equal to the sum of the incoming flows minus 1. 
 \begin{equation}
@@ -128,7 +128,7 @@ min \sum_{(i,j) \in E} c_{ij} x_{ij}
 \end{equation}
 We allow only one outgoing edge from node 0.
 \begin{equation}
-\sum_{(i,j) \in E} x_{ij} = 1
+\sum_{(0,j) \in E} x_{0j} = 1
 \end{equation}
 No edge from node j to 0 is selected.
 \begin{equation}
@@ -136,7 +136,7 @@ No edge from node j to 0 is selected.
 \end{equation}
 Number of selected edges equals $k-1$.
 \begin{equation}
-\sum_{(i,j) \in E} x_{ij} = k - 1
+\sum_{(i,j) \in E, i,j \not= 0} x_{ij} = k - 1
 \end{equation}
 We restrict the flow of commodity k from i to j to be a real value between 0 and 1.
 \begin{equation}
@@ -156,15 +156,15 @@ No flow is allowed to go back from node i to 0 in any case.
 \end{equation}
 Node 0 can send at most 1 commodity to a node.
 \begin{equation}
-\forall (0,j) \in E : f_{0j}^{n} = k
+\forall (0,j) \in E : f_{0j}^{n} \le 1
 \end{equation}
 All nodes together receive k commodities.
 \begin{equation}
-\sum_{n \in N} \sum_{(i,j) \in E} f_{ij}^{n} \le 1
+\sum_{n \in N} \sum_{(i,j) \in E} f_{ij}^{n} = k
 \end{equation}
 A single node can receive at most 1 commodity.
 \begin{equation}
-\forall n \in N \backslash \{0\} : \sum_{i,(i,j) \in E} f_{ij}^{n} \le 1
+\forall n \in N \backslash \{0\} : \sum_{i,(i,n) \in E} f_{in}^{n} \le 1
 \end{equation}
 The sum of incoming flow has to equal to the sum of outgoing flow.
 \begin{equation}
